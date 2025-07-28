@@ -1,0 +1,182 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+  }
+  
+  * {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  /* Button Styles */
+  .btn-primary {
+    @apply bg-miku-500 hover:bg-miku-600 text-white font-medium px-6 py-3 rounded-lg shadow-miku hover:shadow-miku-lg transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-miku-600 border-2 border-miku-500 font-medium px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-miku-50 text-miku-600 font-medium px-6 py-3 rounded-lg transition-all duration-300;
+  }
+  
+  .btn-anime {
+    @apply bg-gradient-to-r from-anime-pink to-anime-purple hover:from-anime-purple hover:to-anime-pink text-white font-medium px-6 py-3 rounded-lg shadow-anime transition-all duration-300 transform hover:scale-105;
+  }
+
+  /* Card Styles */
+  .card {
+    @apply bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+  }
+  
+  .card-miku {
+    @apply bg-white rounded-xl shadow-miku hover:shadow-miku-lg transition-all duration-300 transform hover:-translate-y-1 border border-miku-100;
+  }
+  
+  .card-anime {
+    @apply bg-gradient-to-br from-white to-miku-50 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-miku-200;
+  }
+
+  /* Input Styles */
+  .input-miku {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-miku-500 focus:ring-2 focus:ring-miku-200 transition-all duration-300 bg-white;
+  }
+  
+  .input-error {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-200;
+  }
+
+  /* Text Styles */
+  .text-gradient {
+    @apply bg-gradient-to-r from-miku-500 to-miku-700 bg-clip-text text-transparent;
+  }
+  
+  .text-anime-gradient {
+    @apply bg-anime-gradient bg-clip-text text-transparent;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin;
+  }
+
+  /* Anime-inspired decorations */
+  .sparkle {
+    position: relative;
+  }
+  
+  .sparkle::before {
+    content: '✨';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 0.8rem;
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .music-note {
+    position: relative;
+  }
+  
+  .music-note::before {
+    content: '🎵';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 1rem;
+    animation: bounce-slow 2s infinite;
+  }
+
+  /* Glow effects */
+  .glow-on-hover {
+    @apply transition-all duration-300;
+  }
+  
+  .glow-on-hover:hover {
+    @apply shadow-glow;
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  /* Page transitions */
+  .page-enter {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  
+  .page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms, transform 300ms;
+  }
+  
+  .page-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .page-exit-active {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 300ms, transform 300ms;
+  }
+
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-miku-400 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-miku-500;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+  
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+}
