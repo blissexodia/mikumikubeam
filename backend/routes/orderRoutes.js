@@ -1,6 +1,6 @@
 // routes/orderRoutes.js
 const express = require('express');
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const {
   createOrder,
   getUserOrders,
@@ -13,18 +13,10 @@ const router = express.Router();
 
 // Validation rules
 const createOrderValidation = [
-  body('items')
-    .isArray({ min: 1 })
-    .withMessage('Order must contain at least one item'),
-  body('items.*.productId')
-    .isUUID()
-    .withMessage('Valid product ID is required'),
-  body('items.*.quantity')
-    .isInt({ min: 1 })
-    .withMessage('Quantity must be at least 1'),
-  body('paymentMethod')
-    .notEmpty()
-    .withMessage('Payment method is required')
+  body('items').isArray({ min: 1 }).withMessage('Order must contain at least one item'),
+  body('items.*.productId').isUUID().withMessage('Valid product ID is required'),
+  body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+  body('paymentMethod').notEmpty().withMessage('Payment method is required')
 ];
 
 const updateOrderValidation = [
@@ -42,12 +34,16 @@ const updateOrderValidation = [
     .withMessage('Notes must be a string')
 ];
 
+const orderIdValidation = [
+  param('id').isUUID().withMessage('Invalid order ID')
+];
+
 // Protected routes
 router.post('/', authenticateToken, createOrderValidation, createOrder);
 router.get('/user', authenticateToken, getUserOrders);
-router.get('/:id', authenticateToken, getOrderById);
+router.get('/:id', authenticateToken, orderIdValidation, getOrderById);
 
-// Admin routes
-router.put('/:id/status', authenticateToken, requireAdmin, updateOrderValidation, updateOrderStatus);
+// Admin route
+router.put('/:id/status', authenticateToken, requireAdmin, orderIdValidation, updateOrderValidation, updateOrderStatus);
 
 module.exports = router;

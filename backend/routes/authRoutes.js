@@ -1,4 +1,3 @@
-// routes/authRoutes.js
 const express = require('express');
 const { body } = require('express-validator');
 const {
@@ -6,7 +5,8 @@ const {
   login,
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  verifyTokenController
 } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -75,6 +75,9 @@ const changePasswordValidation = [
 // Public routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+
+// Token verification route for frontend auto-login
+router.get('/verify', authenticateToken, verifyTokenController);
 
 // Protected routes
 router.get('/profile', authenticateToken, getProfile);
