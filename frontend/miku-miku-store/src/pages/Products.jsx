@@ -109,6 +109,9 @@ const Products = () => {
     }
   ];
 
+  const minPrice = 0;
+  const maxPrice = 100;
+
   useEffect(() => {
     setLoading(true);
     // Simulate API call
@@ -170,6 +173,25 @@ const Products = () => {
     return 'All Products';
   };
 
+  // Enhanced dual-range slider handlers
+  const handleMinPriceChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value <= priceRange[1] - 5) { // Ensure minimum gap of $5
+      setPriceRange([value, priceRange[1]]);
+    }
+  };
+
+  const handleMaxPriceChange = (e) => {
+    const value = parseInt(e.target.value);
+    if (value >= priceRange[0] + 5) { // Ensure minimum gap of $5
+      setPriceRange([priceRange[0], value]);
+    }
+  };
+
+  const getSliderPosition = (value, min, max) => {
+    return ((value - min) / (max - min)) * 100;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -184,42 +206,97 @@ const Products = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
           <div className={`lg:w-64 space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
               {/* Categories */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
+              <div className="mb-8">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <Filter className="h-4 w-4 mr-2 text-indigo-600" />
+                  Categories
+                </h3>
                 <div className="space-y-2">
                   {categories.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                         selectedCategory === cat.id
-                          ? 'bg-indigo-100 text-indigo-700'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md transform scale-[1.02]'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-gray-200'
                       }`}
                     >
-                      {cat.name} ({cat.count})
+                      <span className="flex justify-between items-center">
+                        {cat.name}
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          selectedCategory === cat.id 
+                            ? 'bg-white/20 text-white' 
+                            : 'bg-indigo-100 text-indigo-600'
+                        }`}>
+                          {cat.count}
+                        </span>
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Price Range */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Price Range</h3>
-                <div className="px-3">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600 mt-2">
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
+              {/* Enhanced Price Range Slider */}
+              <div className="mb-8">
+                <h3 className="font-semibold text-gray-900 mb-6 flex items-center">
+                  <SlidersHorizontal className="h-4 w-4 mr-2 text-indigo-600" />
+                  Price Range
+                </h3>
+                
+                <div className="px-2">
+                  {/* Price Display */}
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg border border-indigo-200">
+                      <span className="text-sm font-medium text-indigo-700">${priceRange[0]}</span>
+                    </div>
+                    <div className="text-gray-400 text-sm font-medium">to</div>
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-3 py-2 rounded-lg border border-purple-200">
+                      <span className="text-sm font-medium text-purple-700">${priceRange[1]}</span>
+                    </div>
+                  </div>
+
+                  {/* Dual Range Slider Container */}
+                  <div className="relative mb-4 h-6 flex items-center">
+                    {/* Track Background */}
+                    <div className="absolute w-full h-2 bg-gray-200 rounded-full"></div>
+                    
+                    {/* Active Range Track */}
+                    <div 
+                      className="absolute h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-200"
+                      style={{
+                        left: `${getSliderPosition(priceRange[0], minPrice, maxPrice)}%`,
+                        width: `${getSliderPosition(priceRange[1], minPrice, maxPrice) - getSliderPosition(priceRange[0], minPrice, maxPrice)}%`
+                      }}
+                    />
+
+                    {/* Min Range Input */}
+                    <input
+                      type="range"
+                      min={minPrice}
+                      max={maxPrice}
+                      value={priceRange[0]}
+                      onChange={handleMinPriceChange}
+                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer range-slider range-slider-min"
+                    />
+
+                    {/* Max Range Input */}
+                    <input
+                      type="range"
+                      min={minPrice}
+                      max={maxPrice}
+                      value={priceRange[1]}
+                      onChange={handleMaxPriceChange}
+                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer range-slider range-slider-max"
+                    />
+                  </div>
+
+                  {/* Price Labels */}
+                  <div className="flex justify-between text-xs text-gray-500 px-1">
+                    <span>${minPrice}</span>
+                    <span>${maxPrice}+</span>
                   </div>
                 </div>
               </div>
@@ -231,7 +308,7 @@ const Products = () => {
                   setPriceRange([0, 100]);
                   setSortBy('featured');
                 }}
-                className="w-full text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                className="w-full text-sm text-white font-medium bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 px-4 py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md"
               >
                 Clear All Filters
               </button>
@@ -241,13 +318,13 @@ const Products = () => {
           {/* Main Content */}
           <div className="flex-1">
             {/* Toolbar */}
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-100">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {/* View Toggle & Filters */}
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className="lg:hidden flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    className="lg:hidden flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg hover:from-gray-200 hover:to-gray-300 transition-all duration-200 transform hover:scale-[1.02]"
                   >
                     <SlidersHorizontal className="h-4 w-4 mr-2" />
                     Filters
@@ -256,13 +333,21 @@ const Products = () => {
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm' : ''}`}
+                      className={`p-2 rounded-md transition-all duration-200 ${
+                        viewMode === 'grid' 
+                          ? 'bg-white shadow-md text-indigo-600 transform scale-[1.05]' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
                     >
                       <Grid className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
+                      className={`p-2 rounded-md transition-all duration-200 ${
+                        viewMode === 'list' 
+                          ? 'bg-white shadow-md text-indigo-600 transform scale-[1.05]' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
                     >
                       <List className="h-4 w-4" />
                     </button>
@@ -271,11 +356,11 @@ const Products = () => {
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Sort by:</span>
+                  <span className="text-sm text-gray-600 font-medium">Sort by:</span>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors duration-200"
                   >
                     <option value="featured">Featured</option>
                     <option value="name">Name A-Z</option>
@@ -318,6 +403,46 @@ const Products = () => {
           </div>
         </div>
       </div>
+
+      {/* Custom CSS for slider styling */}
+      <style jsx>{`
+        .slider-thumb-min::-webkit-slider-thumb,
+        .slider-thumb-max::-webkit-slider-thumb {
+          appearance: none;
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          cursor: pointer;
+          border: 3px solid white;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+          transition: all 0.2s ease;
+        }
+
+        .slider-thumb-min::-webkit-slider-thumb:hover,
+        .slider-thumb-max::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .slider-thumb-min::-moz-range-thumb,
+        .slider-thumb-max::-moz-range-thumb {
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          cursor: pointer;
+          border: 3px solid white;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+          transition: all 0.2s ease;
+        }
+
+        .slider-thumb-min::-moz-range-thumb:hover,
+        .slider-thumb-max::-moz-range-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+      `}</style>
     </div>
   );
 };

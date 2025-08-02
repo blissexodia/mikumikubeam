@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
   Star, 
@@ -14,8 +13,6 @@ import {
   Sparkles,
   ChevronRight
 } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
-import { productsAPI } from '../services/api';
 
 // Enhanced loading skeleton component
 const ProductSkeleton = () => (
@@ -27,6 +24,53 @@ const ProductSkeleton = () => (
       <div className="flex justify-between items-center">
         <div className="h-6 bg-gray-200 rounded w-1/3"></div>
         <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Simple ProductCard component (since the original import is missing)
+const ProductCard = ({ product }) => (
+  <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group">
+    <div className="relative overflow-hidden">
+      <img
+        src={product.image}
+        alt={product.name}
+        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+      />
+      {product.badge && (
+        <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+          {product.badge}
+        </div>
+      )}
+      {product.discount && (
+        <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+          -{product.discount}%
+        </div>
+      )}
+    </div>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-indigo-600 font-medium">{product.type}</span>
+        <div className="flex items-center">
+          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+          <span className="text-sm text-gray-600 ml-1">{product.rating}</span>
+        </div>
+      </div>
+      <h3 className="text-lg font-bold text-gray-900 mb-2">{product.name}</h3>
+      <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+      <div className="flex justify-between items-end">
+        <div className="flex flex-col space-y-1 min-w-0 flex-1 mr-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-xl font-bold text-gray-900">${product.price}</span>
+            {product.originalPrice && (
+              <span className="text-sm text-gray-500 line-through">${product.originalPrice}</span>
+            )}
+          </div>
+        </div>
+        <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-2 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 text-sm font-medium whitespace-nowrap">
+          Buy Now
+        </button>
       </div>
     </div>
   </div>
@@ -64,10 +108,10 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-black/30"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-        <div className="animate-fade-in-up">
+        <div className="opacity-0 animate-pulse" style={{ animation: 'fadeInUp 1s ease-out forwards' }}>
           <h1 className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight">
             Your Digital
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 animate-gradient">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
               Universe
             </span>
           </h1>
@@ -77,21 +121,14 @@ const HeroSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-            <Link
-              to="/products"
-              className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/25 flex items-center"
-            >
+            <button className="group bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/25 flex items-center">
               <Sparkles className="mr-3 h-6 w-6" />
               Start Shopping
               <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link
-              to="/products/subscriptions"
-              className="group border-2 border-white/50 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 backdrop-blur-sm transition-all duration-300 transform hover:scale-105"
-            >
+            </button>
+            <button className="group border-2 border-white/50 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
               Browse Collections
-              <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </button>
           </div>
 
           {/* Trust indicators */}
@@ -198,9 +235,8 @@ const StatsSection = () => {
 
 // Enhanced category cards with hover effects
 const CategoryCard = ({ category, index }) => (
-  <Link
-    to={category.link}
-    className="group relative overflow-hidden rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105"
+  <button
+    className="group relative overflow-hidden rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 w-full text-left"
     style={{ animationDelay: `${index * 200}ms` }}
   >
     <div className="aspect-w-16 aspect-h-10">
@@ -226,7 +262,7 @@ const CategoryCard = ({ category, index }) => (
         <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform duration-300" />
       </div>
     </div>
-  </Link>
+  </button>
 );
 
 // Enhanced features section
@@ -322,14 +358,12 @@ const Home = () => {
       name: 'Streaming Services',
       description: 'Netflix, Spotify, Disney+, and premium entertainment',
       image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=600&h=400&fit=crop',
-      link: '/products/subscriptions',
       icon: Play
     },
     {
       name: 'Gaming Universe',
       description: 'Steam, Roblox, Google Play, Xbox gift cards',
       image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=400&fit=crop',
-      link: '/products/giftcards',
       icon: Gift
     }
   ], []);
@@ -394,14 +428,11 @@ const Home = () => {
                 Most popular products loved by our community
               </p>
             </div>
-            <Link
-              to="/products"
-              className="hidden lg:flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-            >
+            <button className="hidden lg:flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">
               <TrendingUp className="mr-2 h-5 w-5" />
               View All
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            </button>
           </div>
 
           {loading ? (
@@ -415,8 +446,10 @@ const Home = () => {
               {featuredProducts.map((product, index) => (
                 <div 
                   key={product.id}
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="opacity-0"
+                  style={{ 
+                    animation: `fadeInUp 0.6s ease-out ${index * 100}ms forwards`
+                  }}
                 >
                   <ProductCard product={product} />
                 </div>
@@ -425,14 +458,11 @@ const Home = () => {
           )}
 
           <div className="text-center mt-12 lg:hidden">
-            <Link
-              to="/products"
-              className="inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-            >
+            <button className="inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">
               <TrendingUp className="mr-2 h-5 w-5" />
               View All Products
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            </button>
           </div>
         </div>
       </section>
@@ -476,22 +506,16 @@ const Home = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link
-              to="/register"
-              className="group bg-white text-indigo-600 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center"
-            >
+            <button className="group bg-white text-indigo-600 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-2xl flex items-center">
               <Users className="mr-3 h-6 w-6" />
               Join Now
               <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link
-              to="/products"
-              className="group border-2 border-white/50 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 backdrop-blur-sm transition-all duration-300 transform hover:scale-105 flex items-center"
-            >
+            </button>
+            <button className="group border-2 border-white/50 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 backdrop-blur-sm transition-all duration-300 transform hover:scale-105 flex items-center">
               <Gift className="mr-3 h-6 w-6" />
               Start Shopping
               <ChevronRight className="ml-3 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </button>
           </div>
 
           {/* Additional trust indicators */}
@@ -511,6 +535,19 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };

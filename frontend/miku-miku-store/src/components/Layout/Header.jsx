@@ -9,7 +9,6 @@ import {
   UserCircle,
   Package,
   Heart,
-  Bell,
   Sparkles,
   Zap
 } from 'lucide-react';
@@ -21,9 +20,11 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   
-  // Mock auth and cart data - replace with your actual context
+  // Mock auth data
   const [user] = useState({ name: 'Binnol', email: 'binnol@example.com' });
   const [isAuthenticated] = useState(true);
+  
+  // Cart state (simplified without demo controls)
   const [cartItems] = useState(3);
 
   // Handle scroll effect
@@ -80,12 +81,12 @@ const Header = () => {
         <div className="relative w-full max-w-none px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="flex items-center justify-between h-16 lg:h-18 w-full">
             
-            {/* Enhanced Logo - Responsive sizing */}
+            {/* Logo Section */}
             <div className="flex items-center group min-w-0 flex-shrink-0">
               <a href="/" className="flex items-center space-x-2 sm:space-x-3">
                 <div className="relative">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 via-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 overflow-hidden">
-                    {/* Chibi Miku */}
+                    {/* Chibi Miku Character */}
                     <div className="relative text-white text-sm sm:text-lg font-bold">
                       {/* Hair */}
                       <div className="absolute -top-1 -left-1 w-4 h-3 sm:w-6 sm:h-4 bg-gradient-to-r from-cyan-300 to-cyan-400 rounded-t-full transform rotate-12"></div>
@@ -116,7 +117,7 @@ const Header = () => {
               </a>
             </div>
 
-            {/* Enhanced Desktop Navigation - Hide on smaller screens, show on large */}
+            {/* Desktop Navigation */}
             <nav className="hidden xl:flex items-center space-x-1 flex-shrink-0">
               {navigation.map((item) => (
                 <a
@@ -131,7 +132,7 @@ const Header = () => {
               ))}
             </nav>
 
-            {/* Enhanced Search Bar - Responsive */}
+            {/* Search Bar */}
             <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg mx-4 lg:mx-8">
               <div className="w-full">
                 <div className={`relative transition-all duration-300 ${
@@ -169,20 +170,14 @@ const Header = () => {
               </div>
             </div>
 
-            {/* Enhanced Right Side Icons - Responsive */}
+            {/* Right Side Actions */}
             <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
-              {/* Mobile Search */}
+              {/* Mobile Search Button */}
               <button className="md:hidden p-2 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-300">
                 <Search className="h-5 w-5" />
               </button>
 
-              {/* Notifications - Hidden on mobile */}
-              <button className="hidden sm:flex relative p-2 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-300">
-                <Bell className="h-5 w-5" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              </button>
-
-              {/* Enhanced User Menu - Responsive */}
+              {/* User Menu */}
               <div className="relative">
                 {isAuthenticated ? (
                   <div>
@@ -201,7 +196,7 @@ const Header = () => {
                       </span>
                     </button>
 
-                    {/* Enhanced User Dropdown - Responsive positioning */}
+                    {/* User Dropdown */}
                     {isUserMenuOpen && (
                       <div className="absolute right-0 mt-3 w-56 sm:w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/50 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
                         <div className="px-4 py-3 border-b border-gray-100">
@@ -257,26 +252,58 @@ const Header = () => {
                 )}
               </div>
 
-              {/* Enhanced Cart - Responsive */}
-              <a
-                href="/cart"
-                className="relative p-2 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-300 group"
-              >
-                <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 group-hover:scale-110 transition-transform duration-300" />
-                {cartItems > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-bold animate-pulse">
-                    {cartItems}
-                  </div>
-                )}
-              </a>
+              {/* Shopping Cart */}
+              <div className="relative group">
+                <a
+                  href="/cart"
+                  className="relative p-2 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-300 hover:scale-105"
+                >
+                  <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 transition-all duration-300 group-hover:scale-110" />
+                  {cartItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                      {cartItems}
+                    </span>
+                  )}
+                </a>
 
-              {/* Enhanced Mobile Menu Button */}
+                {/* Cart Hover Preview */}
+                <div className="hidden lg:block absolute right-0 top-full mt-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto z-50">
+                  <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/50 p-4 w-64">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-900">Shopping Cart</h3>
+                      <span className="text-xs text-gray-500">{cartItems} {cartItems === 1 ? 'item' : 'items'}</span>
+                    </div>
+                    
+                    {cartItems > 0 ? (
+                      <div className="space-y-2">
+                        <div className="text-xs text-gray-600">
+                          You have {cartItems} item{cartItems !== 1 ? 's' : ''} in your cart
+                        </div>
+                        <div className="flex justify-between pt-2 border-t border-gray-100">
+                          <span className="text-sm font-medium text-gray-900">Subtotal:</span>
+                          <span className="text-sm font-semibold text-purple-600">${(cartItems * 29.99).toFixed(2)}</span>
+                        </div>
+                        <button className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-2 px-4 rounded-xl text-sm font-medium hover:from-purple-700 hover:to-cyan-700 transition-all duration-300 mt-3">
+                          View Cart
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <ShoppingCart className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">Your cart is empty</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="xl:hidden p-2 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-300 mobile-menu-container"
               >
                 {isMobileMenuOpen ? (
-                  <X className="h-6 w-6 rotate-0 transition-transform duration-300" />
+                  <X className="h-6 w-6 transition-transform duration-300" />
                 ) : (
                   <Menu className="h-6 w-6 transition-transform duration-300" />
                 )}
@@ -284,23 +311,21 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Enhanced Mobile Navigation - Full width */}
+          {/* Mobile Navigation */}
           {isMobileMenuOpen && (
             <div className="xl:hidden py-4 border-t border-gray-200/50 animate-in slide-in-from-top duration-300 mobile-menu-container">
               {/* Mobile Search */}
               <div className="px-3 pb-4 md:hidden">
-                <div className="w-full">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
-                      placeholder="Search products..."
-                      className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-100 focus:border-purple-400 focus:outline-none transition-all duration-300"
-                    />
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
+                    placeholder="Search products..."
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-100 focus:border-purple-400 focus:outline-none transition-all duration-300"
+                  />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
               </div>
 
@@ -319,7 +344,7 @@ const Header = () => {
                 ))}
               </nav>
 
-              {/* Mobile User Actions - Only show if not authenticated */}
+              {/* Mobile Auth Actions */}
               {!isAuthenticated && (
                 <div className="flex flex-col space-y-2 px-6 pt-4 border-t border-gray-200/50 mt-4">
                   <a
@@ -343,7 +368,7 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Click outside to close user menu */}
+      {/* User Menu Backdrop */}
       {isUserMenuOpen && (
         <div
           className="fixed inset-0 z-40"
@@ -351,7 +376,7 @@ const Header = () => {
         />
       )}
 
-      {/* Spacer to prevent content from hiding behind fixed header */}
+      {/* Header Spacer */}
       <div className="h-16 lg:h-18"></div>
     </>
   );
