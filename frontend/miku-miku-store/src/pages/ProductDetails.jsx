@@ -443,4 +443,4 @@ const ProductDetail = () => {
   );
 };
 
-export default ProductDetail;
+export default ProductDetails;
