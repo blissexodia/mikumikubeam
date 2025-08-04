@@ -11,6 +11,7 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -39,6 +40,11 @@ function App() {
               <Route path="/checkout" element={
                 <ProtectedRoute>
                   <Checkout />
+                </ProtectedRoute>
+              } />
+              <Route path="/order-confirmation" element={
+                <ProtectedRoute>
+                  <OrderConfirmation />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
