@@ -19,6 +19,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   
   // Mock auth data
   const [user] = useState({ name: 'Binnol', email: 'binnol@example.com' });
@@ -26,6 +28,74 @@ const Header = () => {
   
   // Cart state (simplified without demo controls)
   const [cartItems] = useState(3);
+
+  // Mock product data for search - matches Products.jsx data
+  const mockProducts = [
+    {
+      id: 1,
+      name: 'Netflix Premium',
+      price: 15.99,
+      category: 'subscriptions',
+      type: 'Monthly Subscription',
+      description: '4K Ultra HD, 4 screens at once',
+    },
+    {
+      id: 2,
+      name: 'Spotify Premium',
+      price: 9.99,
+      category: 'subscriptions',
+      type: 'Monthly Subscription',
+      description: 'Ad-free music streaming',
+    },
+    {
+      id: 3,
+      name: 'Discord Nitro',
+      price: 9.99,
+      category: 'subscriptions',
+      type: 'Monthly Subscription',
+      description: 'Enhanced Discord experience',
+    },
+    {
+      id: 4,
+      name: 'Google Play Gift Card',
+      price: 25.00,
+      category: 'giftcards',
+      type: '$25 Gift Card',
+      description: 'For apps, games, and more',
+    },
+    {
+      id: 5,
+      name: 'Roblox Gift Card',
+      price: 20.00,
+      category: 'giftcards',
+      type: '$20 Gift Card',
+      description: 'Robux and premium features',
+    },
+    {
+      id: 6,
+      name: 'Steam Wallet Card',
+      price: 50.00,
+      category: 'giftcards',
+      type: '$50 Gift Card',
+      description: 'For Steam games and content',
+    },
+    {
+      id: 7,
+      name: 'Disney+ Premium',
+      price: 12.99,
+      category: 'subscriptions',
+      type: 'Monthly Subscription',
+      description: 'Disney, Marvel, Star Wars & more',
+    },
+    {
+      id: 8,
+      name: 'Xbox Gift Card',
+      price: 30.00,
+      category: 'giftcards',
+      type: '$30 Gift Card',
+      description: 'For Xbox games and content',
+    }
+  ];
 
   // Handle scroll effect
   useEffect(() => {
@@ -42,18 +112,79 @@ const Header = () => {
       if (isMobileMenuOpen && !event.target.closest('.mobile-menu-container')) {
         setIsMobileMenuOpen(false);
       }
+      if (showSearchResults && !event.target.closest('.search-container')) {
+        setShowSearchResults(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, showSearchResults]);
+
+  // Handle search functionality
+  const performSearch = (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    const results = mockProducts.filter(product =>
+      product.name.toLowerCase().includes(query.toLowerCase()) ||
+      product.description.toLowerCase().includes(query.toLowerCase()) ||
+      product.category.toLowerCase().includes(query.toLowerCase()) ||
+      product.type.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    setSearchResults(results);
+    setShowSearchResults(true);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Perform search as user types
+    if (query.length > 0) {
+      performSearch(query);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       console.log('Searching for:', searchQuery);
-      setSearchQuery('');
+      performSearch(searchQuery);
+      
+      // Navigate to products page with search query
+      const encodedQuery = encodeURIComponent(searchQuery.trim());
+      window.location.href = `/products?search=${encodedQuery}`;
+      
+      // Alternative: If using React Router, use navigate instead:
+      // navigate(`/products?search=${encodedQuery}`);
     }
+  };
+
+  const handleSearchResultClick = (product) => {
+    console.log('Selected product:', product);
+    setShowSearchResults(false);
+    
+    // Navigate to products page with search query
+    const searchQuery = encodeURIComponent(product.name);
+    window.location.href = `/products?search=${searchQuery}`;
+    
+    // Alternative: If using React Router, use navigate instead:
+    // navigate(`/products?search=${searchQuery}`);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
   };
 
   const handleLogout = () => {
@@ -134,14 +265,14 @@ const Header = () => {
 
             {/* Search Bar */}
             <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg mx-4 lg:mx-8">
-              <div className="w-full">
+              <div className="w-full search-container">
                 <div className={`relative transition-all duration-300 ${
                   isSearchFocused ? 'scale-105' : 'scale-100'
                 }`}>
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={handleSearchChange}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
@@ -152,21 +283,59 @@ const Header = () => {
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   />
-                  <div className={`absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 transition-all duration-300 ${
-                    isSearchFocused ? 'text-purple-500 scale-110' : 'text-gray-400'
-                  }`}>
+                  <button
+                    type="button"
+                    onClick={handleSearch}
+                    className={`absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2 transition-all duration-300 ${
+                      isSearchFocused ? 'text-purple-500 scale-110' : 'text-gray-400'
+                    }`}
+                  >
                     <Search className="h-4 w-4 lg:h-5 lg:w-5" />
-                  </div>
+                  </button>
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('')}
+                      onClick={clearSearch}
                       className="absolute right-3 lg:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
+
+                {/* Search Results Dropdown */}
+                {showSearchResults && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/50 py-2 z-50 max-h-80 overflow-y-auto">
+                    {searchResults.length > 0 ? (
+                      <>
+                        <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                          {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
+                        </div>
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => handleSearchResultClick(product)}
+                            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-purple-50 transition-all duration-200"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
+                              <div className="text-xs text-gray-500 truncate">{product.description}</div>
+                              <div className="text-xs text-purple-600 font-medium">{product.type}</div>
+                            </div>
+                            <div className="text-sm font-semibold text-purple-600 ml-3">
+                              ${product.price}
+                            </div>
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="px-4 py-6 text-center">
+                        <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">No products found for "{searchQuery}"</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -316,17 +485,64 @@ const Header = () => {
             <div className="xl:hidden py-4 border-t border-gray-200/50 animate-in slide-in-from-top duration-300 mobile-menu-container">
               {/* Mobile Search */}
               <div className="px-3 pb-4 md:hidden">
-                <div className="relative">
+                <div className="relative search-container">
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={handleSearchChange}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
                     placeholder="Search products..."
                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-100 focus:border-purple-400 focus:outline-none transition-all duration-300"
                   />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <button 
+                    type="button" 
+                    onClick={handleSearch}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                  >
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </button>
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
+
+                {/* Mobile Search Results */}
+                {showSearchResults && (
+                  <div className="mt-2 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200/50 py-2 max-h-60 overflow-y-auto">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => {
+                            handleSearchResultClick(product);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-purple-50 transition-all duration-200"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{product.description}</div>
+                            <div className="text-xs text-purple-600 font-medium">{product.type}</div>
+                          </div>
+                          <div className="text-sm font-semibold text-purple-600 ml-3">
+                            ${product.price}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center">
+                        <Search className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm text-gray-500">No products found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Mobile Navigation Links */}
