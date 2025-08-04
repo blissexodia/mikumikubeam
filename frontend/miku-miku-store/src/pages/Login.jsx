@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/authContext.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { useCart } from '../contexts/CartContext.jsx';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
 
   const { login, loading, error, clearError } = useAuth();
+  const { syncWithServer } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -61,6 +63,7 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
     
     if (result.success) {
+      await syncWithServer(); // Sync cart after successful login
       navigate(from, { replace: true });
     }
   };

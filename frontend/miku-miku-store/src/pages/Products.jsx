@@ -1,170 +1,87 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Filter, Grid, List, Search, SlidersHorizontal } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../services/api';
+import { useCart } from '../contexts/CartContext';
 
 const Products = () => {
-  const { category } = useParams();
-  const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const category = searchParams.get('category') || 'all';
+  const searchQuery = searchParams.get('search') || '';
+  const page = parseInt(searchParams.get('page') || '1');
+  const sortBy = searchParams.get('sortBy') || 'featured';
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
-  const [sortBy, setSortBy] = useState('featured');
-  const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedCategory, setSelectedCategory] = useState(category || 'all');
+  const [selectedCategory, setSelectedCategory] = useState(category);
   const [showFilters, setShowFilters] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 12,
+    hasNext: false,
+    hasPrev: false
+  });
+  const { addToCart } = useCart();
 
-  // Mock products data - replace with API call
-  const mockProducts = [
-    {
-      id: 1,
-      name: 'Netflix Premium',
-      price: 15.99,
-      category: 'subscriptions',
-      type: 'Monthly Subscription',
-      image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=300&h=200&fit=crop',
-      description: '4K Ultra HD, 4 screens at once',
-      rating: 4.8,
-      features: ['4K Ultra HD', '4 simultaneous screens', 'Download content']
-    },
-    {
-      id: 2,
-      name: 'Spotify Premium',
-      price: 9.99,
-      category: 'subscriptions',
-      type: 'Monthly Subscription',
-      image: 'https://images.unsplash.com/photo-1611339555312-e607c8352fd7?w=300&h=200&fit=crop',
-      description: 'Ad-free music streaming',
-      rating: 4.7,
-      features: ['Ad-free listening', 'Offline downloads', 'High quality audio']
-    },
-    {
-      id: 3,
-      name: 'Discord Nitro',
-      price: 9.99,
-      category: 'subscriptions',
-      type: 'Monthly Subscription',
-      image: 'https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=300&h=200&fit=crop',
-      description: 'Enhanced Discord experience',
-      rating: 4.6,
-      features: ['HD video calls', 'Custom emojis', 'Server boosts']
-    },
-    {
-      id: 4,
-      name: 'Google Play Gift Card',
-      price: 25.00,
-      category: 'giftcards',
-      type: '$25 Gift Card',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=300&h=200&fit=crop',
-      description: 'For apps, games, and more',
-      rating: 4.9,
-      features: ['Instant delivery', 'No expiration', 'Worldwide valid']
-    },
-    {
-      id: 5,
-      name: 'Roblox Gift Card',
-      price: 20.00,
-      category: 'giftcards',
-      type: '$20 Gift Card',
-      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&h=200&fit=crop',
-      description: 'Robux and premium features',
-      rating: 4.8,
-      features: ['Instant Robux', 'Premium benefits', 'Safe & secure']
-    },
-    {
-      id: 6,
-      name: 'Steam Wallet Card',
-      price: 50.00,
-      category: 'giftcards',
-      type: '$50 Gift Card',
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&h=200&fit=crop',
-      description: 'For Steam games and content',
-      rating: 4.9,
-      features: ['Instant delivery', 'Global acceptance', 'No fees']
-    },
-    {
-      id: 7,
-      name: 'Disney+ Premium',
-      price: 12.99,
-      category: 'subscriptions',
-      type: 'Monthly Subscription',
-      image: 'https://images.unsplash.com/photo-1489599162167-c5babf1e9a52?w=300&h=200&fit=crop',
-      description: 'Disney, Marvel, Star Wars & more',
-      rating: 4.5,
-      features: ['4K streaming', 'Multiple profiles', 'Download content']
-    },
-    {
-      id: 8,
-      name: 'Xbox Gift Card',
-      price: 30.00,
-      category: 'giftcards',
-      type: '$30 Gift Card',
-      image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=300&h=200&fit=crop',
-      description: 'For Xbox games and content',
-      rating: 4.7,
-      features: ['Digital delivery', 'Games & DLC', 'Xbox Live Gold']
-    }
+  // Fetch categories from backend (mock for now, replace with API if needed)
+  const categories = [
+    { id: 'all', name: 'All Products', count: 0 },
+    { id: 'subscriptions', name: 'Subscriptions', count: 0 },
+    { id: 'giftcards', name: 'Gift Cards', count: 0 }
   ];
-
-  const minPrice = 0;
-  const maxPrice = 100;
 
   useEffect(() => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      let filteredProducts = mockProducts;
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const response = await productsAPI.getAll({
+          page,
+          category: selectedCategory !== 'all' ? selectedCategory : '',
+          search: searchQuery,
+          sortBy: sortBy === 'featured' ? 'createdAt' : sortBy
+        });
 
-      // Filter by category
-      if (selectedCategory !== 'all') {
-        filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
+        // Map backend response to frontend format
+        const mappedProducts = response.products.map(product => ({
+          id: product.id,
+          name: product.name,
+          price: parseFloat(product.price),
+          category: product.category.name,
+          type: product.category.type,
+          image: product.image,
+          description: product.description,
+          rating: null,
+          features: product.features,
+          slug: product.slug,
+          stock: product.stock,
+          maxQuantity: product.stock,
+          originalPrice: product.originalPrice ? parseFloat(product.originalPrice) : null
+        }));
+
+        // Update category counts (approximate, replace with API if available)
+        const updatedCategories = categories.map(cat => ({
+          ...cat,
+          count: cat.id === 'all'
+            ? response.pagination.totalItems
+            : response.products.filter(p => p.category.name.toLowerCase() === cat.id).length
+        }));
+
+        setProducts(mappedProducts);
+        setPagination(response.pagination);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+        setProducts([]);
+        setLoading(false);
       }
+    };
 
-      // Filter by search query
-      if (searchQuery) {
-        filteredProducts = filteredProducts.filter(p =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.description.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-
-      // Filter by price range
-      filteredProducts = filteredProducts.filter(p => 
-        p.price >= priceRange[0] && p.price <= priceRange[1]
-      );
-
-      // Sort products
-      switch (sortBy) {
-        case 'price-low':
-          filteredProducts.sort((a, b) => a.price - b.price);
-          break;
-        case 'price-high':
-          filteredProducts.sort((a, b) => b.price - a.price);
-          break;
-        case 'rating':
-          filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-          break;
-        case 'name':
-          filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-        default:
-          // Keep original order for 'featured'
-          break;
-      }
-
-      setProducts(filteredProducts);
-      setLoading(false);
-    }, 500);
-  }, [selectedCategory, searchQuery, priceRange, sortBy]);
-
-  const categories = [
-    { id: 'all', name: 'All Products', count: mockProducts.length },
-    { id: 'subscriptions', name: 'Subscriptions', count: mockProducts.filter(p => p.category === 'subscriptions').length },
-    { id: 'giftcards', name: 'Gift Cards', count: mockProducts.filter(p => p.category === 'giftcards').length }
-  ];
+    fetchProducts();
+  }, [page, selectedCategory, searchQuery, sortBy]);
 
   const getPageTitle = () => {
     if (searchQuery) return `Search Results for "${searchQuery}"`;
@@ -173,23 +90,15 @@ const Products = () => {
     return 'All Products';
   };
 
-  // Enhanced dual-range slider handlers
-  const handleMinPriceChange = (e) => {
-    const value = parseInt(e.target.value);
-    if (value <= priceRange[1] - 5) { // Ensure minimum gap of $5
-      setPriceRange([value, priceRange[1]]);
-    }
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const newSearch = formData.get('search');
+    setSearchParams({ search: newSearch, category: selectedCategory, sortBy, page: '1' });
   };
 
-  const handleMaxPriceChange = (e) => {
-    const value = parseInt(e.target.value);
-    if (value >= priceRange[0] + 5) { // Ensure minimum gap of $5
-      setPriceRange([priceRange[0], value]);
-    }
-  };
-
-  const getSliderPosition = (value, min, max) => {
-    return ((value - min) / (max - min)) * 100;
+  const handlePageChange = (newPage) => {
+    setSearchParams({ category: selectedCategory, search: searchQuery, sortBy, page: newPage });
   };
 
   return (
@@ -217,7 +126,10 @@ const Products = () => {
                   {categories.map(cat => (
                     <button
                       key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setSearchParams({ category: cat.id, search: searchQuery, sortBy, page: '1' });
+                      }}
                       className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                         selectedCategory === cat.id
                           ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md transform scale-[1.02]'
@@ -239,74 +151,12 @@ const Products = () => {
                 </div>
               </div>
 
-              {/* Enhanced Price Range Slider */}
-              <div className="mb-8">
-                <h3 className="font-semibold text-gray-900 mb-6 flex items-center">
-                  <SlidersHorizontal className="h-4 w-4 mr-2 text-indigo-600" />
-                  Price Range
-                </h3>
-                
-                <div className="px-2">
-                  {/* Price Display */}
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-2 rounded-lg border border-indigo-200">
-                      <span className="text-sm font-medium text-indigo-700">${priceRange[0]}</span>
-                    </div>
-                    <div className="text-gray-400 text-sm font-medium">to</div>
-                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 px-3 py-2 rounded-lg border border-purple-200">
-                      <span className="text-sm font-medium text-purple-700">${priceRange[1]}</span>
-                    </div>
-                  </div>
-
-                  {/* Dual Range Slider Container */}
-                  <div className="relative mb-4 h-6 flex items-center">
-                    {/* Track Background */}
-                    <div className="absolute w-full h-2 bg-gray-200 rounded-full"></div>
-                    
-                    {/* Active Range Track */}
-                    <div 
-                      className="absolute h-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-200"
-                      style={{
-                        left: `${getSliderPosition(priceRange[0], minPrice, maxPrice)}%`,
-                        width: `${getSliderPosition(priceRange[1], minPrice, maxPrice) - getSliderPosition(priceRange[0], minPrice, maxPrice)}%`
-                      }}
-                    />
-
-                    {/* Min Range Input */}
-                    <input
-                      type="range"
-                      min={minPrice}
-                      max={maxPrice}
-                      value={priceRange[0]}
-                      onChange={handleMinPriceChange}
-                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer range-slider range-slider-min"
-                    />
-
-                    {/* Max Range Input */}
-                    <input
-                      type="range"
-                      min={minPrice}
-                      max={maxPrice}
-                      value={priceRange[1]}
-                      onChange={handleMaxPriceChange}
-                      className="absolute w-full h-2 bg-transparent appearance-none cursor-pointer range-slider range-slider-max"
-                    />
-                  </div>
-
-                  {/* Price Labels */}
-                  <div className="flex justify-between text-xs text-gray-500 px-1">
-                    <span>${minPrice}</span>
-                    <span>${maxPrice}+</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Clear Filters */}
               <button
                 onClick={() => {
                   setSelectedCategory('all');
-                  setPriceRange([0, 100]);
                   setSortBy('featured');
+                  setSearchParams({ category: 'all', search: '', sortBy: 'featured', page: '1' });
                 }}
                 className="w-full text-sm text-white font-medium bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 px-4 py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md"
               >
@@ -354,20 +204,37 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 font-medium">Sort by:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors duration-200"
-                  >
-                    <option value="featured">Featured</option>
-                    <option value="name">Name A-Z</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="rating">Highest Rated</option>
-                  </select>
+                {/* Search and Sort Dropdown */}
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <form onSubmit={handleSearch} className="flex-1 sm:flex-none">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                      <input
+                        type="text"
+                        name="search"
+                        defaultValue={searchQuery}
+                        placeholder="Search products..."
+                        className="w-full sm:w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </form>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 font-medium">Sort by:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => {
+                        const newSortBy = e.target.value;
+                        setSortBy(newSortBy);
+                        setSearchParams({ category: selectedCategory, search: searchQuery, sortBy: newSortBy, page: '1' });
+                      }}
+                      className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white hover:border-gray-400 transition-colors duration-200"
+                    >
+                      <option value="featured">Featured</option>
+                      <option value="name">Name A-Z</option>
+                      <option value="price-low">Price: Low to High</option>
+                      <option value="price-high">Price: High to Low</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -396,15 +263,51 @@ const Products = () => {
                     key={product.id} 
                     product={product}
                     className={viewMode === 'list' ? 'flex-row' : ''}
+                    onAddToCart={() => addToCart(product, 1)}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {products.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <nav className="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={!pagination.hasPrev}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  {[...Array(pagination.totalPages)].map((_, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => handlePageChange(index + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium ${
+                        pagination.currentPage === index + 1
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={!pagination.hasNext}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </nav>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Custom CSS for slider styling */}
+      {/* Custom CSS for slider styling (preserved but unused) */}
       <style jsx>{`
         .slider-thumb-min::-webkit-slider-thumb,
         .slider-thumb-max::-webkit-slider-thumb {
@@ -437,7 +340,6 @@ const Products = () => {
           transition: all 0.2s ease;
         }
 
-        .slider-thumb-min::-moz-range-thumb:hover,
         .slider-thumb-max::-moz-range-thumb:hover {
           transform: scale(1.2);
           box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);

@@ -1,10 +1,11 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const db = require('./models');
 
+// Load environment variables
 dotenv.config();
+
 const app = express();
 
 // 🛡️ Middleware
@@ -30,6 +31,7 @@ const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 
 // 🧩 Use routes
 app.use('/api/auth', authRoutes);
@@ -37,6 +39,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/cart', cartRoutes);
 
 // 🚫 404 handler
 app.use('*', (req, res) => {

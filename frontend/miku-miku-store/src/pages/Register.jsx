@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const Register = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const { register, loading, error, clearError } = useAuth();
+  const { syncWithServer } = useCart();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -25,7 +27,6 @@ const Register = () => {
       [name]: value
     }));
     
-    // Clear errors when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -45,6 +46,8 @@ const Register = () => {
       newErrors.name = 'Full name is required';
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
+    } else if (!formData.name.includes(' ')) {
+      newErrors.name = 'Please enter both first and last name';
     }
 
     // Email validation
@@ -84,13 +87,19 @@ const Register = () => {
     
     if (!validateForm()) return;
 
+    // Split name into firstName and lastName
+    const [firstName, ...lastNameParts] = formData.name.trim().split(' ');
+    const lastName = lastNameParts.join(' ') || '';
+
     const result = await register({
-      name: formData.name.trim(),
+      firstName,
+      lastName,
       email: formData.email,
       password: formData.password
     });
     
     if (result.success) {
+      await syncWithServer(); // Sync cart after successful registration
       navigate('/');
     }
   };
@@ -172,7 +181,7 @@ const Register = () => {
                   className={`appearance-none block w-full pl-10 pr-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
                     errors.name ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Enter your full name"
+                  placeholder="Enter your first and last name"
                 />
               </div>
               {errors.name && (

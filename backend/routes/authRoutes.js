@@ -6,7 +6,9 @@ const {
   getProfile,
   updateProfile,
   changePassword,
-  verifyTokenController
+  verifyTokenController,
+  logout,
+  logoutAll
 } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -83,5 +85,7 @@ router.get('/verify', authenticateToken, verifyTokenController);
 router.get('/profile', authenticateToken, getProfile);
 router.put('/profile', authenticateToken, updateProfileValidation, updateProfile);
 router.put('/change-password', authenticateToken, changePasswordValidation, changePassword);
+router.post('/logout', authenticateToken, logout);
+router.post('/logout-all', authenticateToken, logoutAll);
 
 module.exports = router;

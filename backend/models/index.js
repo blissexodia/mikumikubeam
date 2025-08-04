@@ -1,7 +1,7 @@
-// models/index.js
 const { Sequelize } = require('sequelize');
 const dotenv = require('dotenv');
 
+// Load environment variables
 dotenv.config();
 
 // Initialize Sequelize
@@ -31,6 +31,9 @@ db.Category = require('./Category')(sequelize, Sequelize.DataTypes);
 db.Product = require('./Product')(sequelize, Sequelize.DataTypes);
 db.Order = require('./Order')(sequelize, Sequelize.DataTypes);
 db.OrderItem = require('./OrderItem')(sequelize, Sequelize.DataTypes);
+const { Cart, CartItem } = require('./Cart')(sequelize, Sequelize.DataTypes);
+db.Cart = Cart;
+db.CartItem = CartItem;
 
 // Define associations
 Object.keys(db).forEach(modelName => {

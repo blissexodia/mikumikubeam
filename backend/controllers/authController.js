@@ -243,11 +243,35 @@ const changePassword = async (req, res) => {
   }
 };
 
+// Logout (invalidate current token - client should clear token)
+const logout = async (req, res) => {
+  try {
+    // Client-side should clear the token; server doesn't maintain token state
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Logout all sessions (invalidate all tokens - client should clear token)
+const logoutAll = async (req, res) => {
+  try {
+    // Client-side should clear all tokens; server doesn't maintain token state
+    res.json({ message: 'All sessions logged out successfully' });
+  } catch (error) {
+    console.error('Logout all error:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
-  verifyTokenController
+  verifyTokenController,
+  logout,
+  logoutAll
 };

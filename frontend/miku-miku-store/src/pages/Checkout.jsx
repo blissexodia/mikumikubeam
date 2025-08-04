@@ -14,7 +14,9 @@ import {
   CheckCircle2,
   Timer
 } from 'lucide-react';
-import { useCart } from '../contexts/cartContext';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { api } from '../services/api';
 
 // Toast notification component
 const Toast = ({ message, type, onClose }) => {
@@ -46,7 +48,7 @@ const LoadingSpinner = ({ size = 'sm' }) => {
   );
 };
 
-// Empty cart component with enhanced visuals
+// Empty cart component
 const EmptyCart = () => (
   <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,7 +73,7 @@ const EmptyCart = () => (
   </div>
 );
 
-// Enhanced quantity control with loading states
+// Quantity control
 const QuantityControl = ({ item, onUpdateQuantity, isUpdating }) => (
   <div className="flex items-center space-x-3">
     <span className="text-sm text-gray-600 font-medium">Qty:</span>
@@ -105,7 +107,7 @@ const QuantityControl = ({ item, onUpdateQuantity, isUpdating }) => (
   </div>
 );
 
-// Enhanced cart item features with better styling
+// Cart item features
 const CartItemFeatures = ({ features }) => {
   if (!features?.length) return null;
   
@@ -130,15 +132,15 @@ const CartItemFeatures = ({ features }) => {
   );
 };
 
-// Enhanced cart item with animations and better UX
+// Cart item
 const CartItem = ({ item, onUpdateQuantity, onRemoveItem, onSaveForLater, isUpdating, isRemoving }) => {
-  const itemTotal = useMemo(() => (item.price * item.quantity).toFixed(2), [item.price, item.quantity]);
+  const itemTotal = useMemo(() => (item.product.price * item.quantity).toFixed(2), [item.product.price, item.quantity]);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <div className={`p-6 transition-all duration-300 ${isRemoving ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
       <div className="flex items-start space-x-4">
-        {/* Product Image with loading state */}
+        {/* Product Image */}
         <div className="relative w-24 h-24 flex-shrink-0">
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gray-200 rounded-lg animate-pulse flex items-center justify-center">
@@ -146,8 +148,8 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, onSaveForLater, isUpda
             </div>
           )}
           <img
-            src={item.image}
-            alt={item.name}
+            src={item.product.image}
+            alt={item.product.name}
             className={`w-24 h-24 object-cover rounded-lg transition-opacity duration-300 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -161,10 +163,10 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, onSaveForLater, isUpda
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-gray-900 leading-tight">
               <Link 
-                to={`/product/${item.id}`}
+                to={`/product/${item.product.id}`}
                 className="hover:text-indigo-600 transition-colors duration-200"
               >
-                {item.name}
+                {item.product.name}
               </Link>
             </h3>
             <div className="flex items-center space-x-2">
@@ -178,7 +180,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, onSaveForLater, isUpda
               <button
                 onClick={() => onRemoveItem(item.id)}
                 className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-200"
-                aria-label={`Remove ${item.name} from cart`}
+                aria-label={`Remove ${item.product.name} from cart`}
                 disabled={isRemoving}
               >
                 {isRemoving ? <LoadingSpinner /> : <X className="h-5 w-5" />}
@@ -186,10 +188,10 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, onSaveForLater, isUpda
             </div>
           </div>
           
-          <p className="text-sm text-gray-600 mb-1 font-medium">{item.type}</p>
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
+          <p className="text-sm text-gray-600 mb-1 font-medium">{item.product.category}</p>
+          <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.product.name}</p>
 
-          <CartItemFeatures features={item.features} />
+          <CartItemFeatures features={[]} />
 
           {/* Quantity and Price Controls */}
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -205,25 +207,17 @@ const CartItem = ({ item, onUpdateQuantity, onRemoveItem, onSaveForLater, isUpda
                 ${itemTotal}
               </div>
               <div className="text-sm text-gray-500">
-                ${item.price.toFixed(2)} each
+                ${item.product.price.toFixed(2)} each
               </div>
             </div>
           </div>
-
-          {/* Stock indicator */}
-          {item.stock && item.stock < 10 && (
-            <div className="mt-3 flex items-center space-x-1 text-xs text-amber-600">
-              <Timer className="h-3 w-3" />
-              <span>Only {item.stock} left in stock</span>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
 };
 
-// Enhanced order summary with discount calculations
+// Order summary
 const OrderSummary = ({ totalItems, totalPrice, onApplyPromo }) => {
   const [promoCode, setPromoCode] = useState('');
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
@@ -242,23 +236,23 @@ const OrderSummary = ({ totalItems, totalPrice, onApplyPromo }) => {
     
     setIsApplyingPromo(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      if (promoCode.toUpperCase() === 'SAVE10') {
-        setAppliedPromo({ code: promoCode, percentage: 10 });
-        onApplyPromo?.('Promo code applied successfully!', 'success');
-      } else {
-        onApplyPromo?.('Invalid promo code', 'error');
-      }
+    try {
+      const response = await api.post('/api/coupons/validate', { code: promoCode.toUpperCase() });
+      const { discountPercentage } = response.data;
+      setAppliedPromo({ code: promoCode.toUpperCase(), percentage: discountPercentage });
+      onApplyPromo?.('Promo code applied successfully!', 'success');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Invalid promo code';
+      onApplyPromo?.(errorMessage, 'error');
+    } finally {
       setIsApplyingPromo(false);
-    }, 1000);
+    }
   }, [promoCode, onApplyPromo]);
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 sticky top-8 border">
       <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
 
-      {/* Order Details */}
       <div className="space-y-4 mb-6">
         <div className="flex justify-between items-center">
           <span className="text-gray-600">
@@ -297,7 +291,6 @@ const OrderSummary = ({ totalItems, totalPrice, onApplyPromo }) => {
         </div>
       </div>
 
-      {/* Checkout Button */}
       <Link
         to="/checkout"
         className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-200 transition-all duration-200 block text-center mb-6 transform hover:scale-105 shadow-lg"
@@ -305,7 +298,6 @@ const OrderSummary = ({ totalItems, totalPrice, onApplyPromo }) => {
         Proceed to Checkout
       </Link>
 
-      {/* Security Features */}
       <div className="space-y-3 text-sm text-gray-600 mb-6 bg-gray-50 rounded-lg p-4">
         <div className="flex items-center">
           <Shield className="h-4 w-4 mr-3 text-green-500 flex-shrink-0" />
@@ -321,7 +313,6 @@ const OrderSummary = ({ totalItems, totalPrice, onApplyPromo }) => {
         </div>
       </div>
 
-      {/* Promo Code */}
       <div className="pt-6 border-t border-gray-200">
         <h3 className="text-sm font-semibold text-gray-900 mb-3">Promo Code</h3>
         <form onSubmit={handlePromoSubmit} className="flex space-x-2">
@@ -347,15 +338,15 @@ const OrderSummary = ({ totalItems, totalPrice, onApplyPromo }) => {
   );
 };
 
-// Enhanced recommended products with better interactions
+// Recommended products
 const RecommendedProducts = ({ onAddToCart }) => {
   const recommendedItems = useMemo(() => [
     {
       id: 'disney-plus',
       name: 'Disney+ Premium',
       price: 12.99,
-      originalPrice: 15.99,
       image: 'https://images.unsplash.com/photo-1489599162167-c5babf1e9a52?w=60&h=60&fit=crop',
+      category: 'subscription',
       rating: 4.8
     },
     {
@@ -363,6 +354,7 @@ const RecommendedProducts = ({ onAddToCart }) => {
       name: 'Xbox Gift Card',
       price: 30.00,
       image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=60&h=60&fit=crop',
+      category: 'gift-card',
       rating: 4.9
     }
   ], []);
@@ -383,16 +375,11 @@ const RecommendedProducts = ({ onAddToCart }) => {
               <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-bold text-gray-900">${item.price.toFixed(2)}</span>
-                {item.originalPrice && (
-                  <span className="text-xs text-gray-500 line-through">${item.originalPrice.toFixed(2)}</span>
-                )}
               </div>
-              {item.rating && (
-                <div className="flex items-center mt-1">
-                  <span className="text-xs text-yellow-500">★</span>
-                  <span className="text-xs text-gray-600 ml-1">{item.rating}</span>
-                </div>
-              )}
+              <div className="flex items-center mt-1">
+                <span className="text-xs text-yellow-500">★</span>
+                <span className="text-xs text-gray-600 ml-1">{item.rating}</span>
+              </div>
             </div>
             <button 
               onClick={() => onAddToCart(item)}
@@ -407,68 +394,108 @@ const RecommendedProducts = ({ onAddToCart }) => {
   );
 };
 
-// Main Cart component with enhanced state management
+// Main Cart component
 const Cart = () => {
-  const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart } = useCart();
+  const { items, updateQuantity, removeFromCart, getTotalPrice, getTotalItems, clearCart, syncWithServer } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [removingItems, setRemovingItems] = useState(new Set());
   const [toast, setToast] = useState(null);
 
-  // Memoize expensive calculations
   const totalPrice = useMemo(() => getTotalPrice().toFixed(2), [getTotalPrice]);
   const totalItems = useMemo(() => getTotalItems(), [getTotalItems]);
 
-  // Enhanced quantity update with loading state
   const handleUpdateQuantity = useCallback(async (id, quantity) => {
     setUpdatingItems(prev => new Set(prev).add(id));
     
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      if (isAuthenticated) {
+        await api.put(`/api/cart/${id}`, { quantity }, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        await syncWithServer();
+      }
       updateQuantity(id, Math.max(1, quantity));
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to update quantity';
+      showToast(errorMessage, 'error');
+    } finally {
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
-    }, 300);
-  }, [updateQuantity]);
+    }
+  }, [updateQuantity, syncWithServer, isAuthenticated, user]);
 
-  // Enhanced remove with loading state and confirmation
   const handleRemoveItem = useCallback(async (id) => {
     const item = items.find(item => item.id === id);
     if (!item) return;
 
-    if (window.confirm(`Remove "${item.name}" from your cart?`)) {
+    if (window.confirm(`Remove "${item.product.name}" from your cart?`)) {
       setRemovingItems(prev => new Set(prev).add(id));
       
-      setTimeout(() => {
+      try {
+        if (isAuthenticated) {
+          await api.delete(`/api/cart/${id}`, {
+            headers: { Authorization: `Bearer ${user.token}` }
+          });
+          await syncWithServer();
+        }
         removeFromCart(id);
+        showToast('Item removed from cart', 'success');
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to remove item';
+        showToast(errorMessage, 'error');
+      } finally {
         setRemovingItems(prev => {
           const newSet = new Set(prev);
           newSet.delete(id);
           return newSet;
         });
-        showToast('Item removed from cart', 'success');
-      }, 500);
+      }
     }
-  }, [items, removeFromCart]);
+  }, [items, removeFromCart, syncWithServer, isAuthenticated, user]);
 
-  const handleClearCart = useCallback(() => {
+  const handleClearCart = useCallback(async () => {
     if (window.confirm('Remove all items from your cart?')) {
-      clearCart();
-      showToast('Cart cleared successfully', 'success');
+      try {
+        if (isAuthenticated) {
+          for (const item of items) {
+            await api.delete(`/api/cart/${item.id}`, {
+              headers: { Authorization: `Bearer ${user.token}` }
+            });
+          }
+          await syncWithServer();
+        }
+        clearCart();
+        showToast('Cart cleared successfully', 'success');
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to clear cart';
+        showToast(errorMessage, 'error');
+      }
     }
-  }, [clearCart]);
+  }, [clearCart, syncWithServer, isAuthenticated, user, items]);
 
   const handleSaveForLater = useCallback((id) => {
-    // TODO: Implement save for later functionality
-    showToast('Item saved for later', 'success');
+    showToast('Save for later not yet implemented', 'error');
   }, []);
 
-  const handleAddRecommended = useCallback((item) => {
-    // TODO: Implement add to cart for recommended items
-    showToast(`${item.name} added to cart!`, 'success');
-  }, []);
+  const handleAddRecommended = useCallback(async (item) => {
+    try {
+      if (isAuthenticated) {
+        await api.post('/api/cart', { productId: item.id, quantity: 1 }, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        await syncWithServer();
+      }
+      updateQuantity(item.id, 1);
+      showToast(`${item.name} added to cart!`, 'success');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Failed to add item';
+      showToast(errorMessage, 'error');
+    }
+  }, [updateQuantity, syncWithServer, isAuthenticated, user]);
 
   const showToast = useCallback((message, type) => {
     setToast({ message, type });
@@ -486,7 +513,6 @@ const Cart = () => {
     <>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Enhanced Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
             <p className="text-lg text-gray-600">
@@ -495,10 +521,8 @@ const Cart = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Cart Items */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl shadow-lg border">
-                {/* Cart Header */}
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-900">Cart Items</h2>
@@ -511,7 +535,6 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {/* Cart Items List */}
                 <div className="divide-y divide-gray-200">
                   {items.map((item) => (
                     <CartItem
@@ -527,7 +550,6 @@ const Cart = () => {
                 </div>
               </div>
 
-              {/* Continue Shopping */}
               <div className="mt-6">
                 <Link
                   to="/products"
@@ -539,7 +561,6 @@ const Cart = () => {
               </div>
             </div>
 
-            {/* Right Sidebar */}
             <div className="lg:col-span-1">
               <OrderSummary 
                 totalItems={totalItems} 
@@ -552,7 +573,6 @@ const Cart = () => {
         </div>
       </div>
 
-      {/* Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}

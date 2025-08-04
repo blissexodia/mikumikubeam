@@ -1,4 +1,3 @@
-// controllers/productController.js
 const { validationResult } = require('express-validator');
 const { Product, Category } = require('../models');
 const { Op } = require('sequelize');
@@ -13,6 +12,8 @@ const getAllProducts = async (req, res) => {
       type,
       search,
       featured,
+      minPrice,
+      maxPrice,
       sortBy = 'createdAt',
       sortOrder = 'DESC'
     } = req.query;
@@ -44,6 +45,21 @@ const getAllProducts = async (req, res) => {
       ];
     }
 
+    if (minPrice !== undefined) {
+      whereClause.price = { ...whereClause.price, [Op.gte]: parseFloat(minPrice) };
+    }
+
+    if (maxPrice !== undefined) {
+      whereClause.price = { ...whereClause.price, [Op.lte]: parseFloat(maxPrice) };
+    }
+
+    // Map frontend sortBy values to database fields
+    let orderField = sortBy;
+    if (sortBy === 'price-low') orderField = 'price';
+    if (sortBy === 'price-high') orderField = 'price';
+    if (sortBy === 'name') orderField = 'name';
+    const orderDirection = sortBy === 'price-low' ? 'ASC' : sortOrder.toUpperCase();
+
     const { count, rows: products } = await Product.findAndCountAll({
       where: whereClause,
       include: [
@@ -53,7 +69,7 @@ const getAllProducts = async (req, res) => {
           attributes: ['id', 'name', 'slug', 'type', 'color']
         }
       ],
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, orderDirection]],
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -151,6 +167,13 @@ const getProductsByCategory = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
+    // Map frontend sortBy values to database fields
+    let orderField = sortBy;
+    if (sortBy === 'price-low') orderField = 'price';
+    if (sortBy === 'price-high') orderField = 'price';
+    if (sortBy === 'name') orderField = 'name';
+    const orderDirection = sortBy === 'price-low' ? 'ASC' : sortOrder.toUpperCase();
+
     const { count, rows: products } = await Product.findAndCountAll({
       where: {
         categoryId: category.id,
@@ -163,7 +186,7 @@ const getProductsByCategory = async (req, res) => {
           attributes: ['id', 'name', 'slug', 'type', 'color']
         }
       ],
-      order: [[sortBy, sortOrder.toUpperCase()]],
+      order: [[orderField, orderDirection]],
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
