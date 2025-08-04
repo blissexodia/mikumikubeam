@@ -1,4 +1,3 @@
-// routes/orderRoutes.js
 const express = require('express');
 const { body, param } = require('express-validator');
 const {
@@ -8,6 +7,7 @@ const {
   updateOrderStatus
 } = require('../controllers/orderController');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const db = require('../models');
 
 const router = express.Router();
 
@@ -42,6 +42,43 @@ const orderIdValidation = [
 router.post('/', authenticateToken, createOrderValidation, createOrder);
 router.get('/user', authenticateToken, getUserOrders);
 router.get('/:id', authenticateToken, orderIdValidation, getOrderById);
+
+// Public route for order details QR code
+router.get('/details/:orderId', orderIdValidation, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await db.Order.findOne({
+      where: { id: orderId },
+      include: [
+        { model: db.OrderItem, include: [db.Product] },
+        { model: db.User, attributes: ['id', 'email'] }
+      ]
+    });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    res.json({
+      orderId: order.id,
+      userEmail: order.User.email,
+      items: order.OrderItems.map(item => ({
+        productId: item.Product.id,
+        productName: item.Product.name,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      total: order.total,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt
+    });
+  } catch (error) {
+    console.error('❌ Order details error:', error);
+    res.status(500).json({
+      message: 'Failed to fetch order details',
+      error: process.env.NODE_ENV === 'development' ? error.message : {}
+    });
+  }
+});
 
 // Admin route
 router.put('/:id/status', authenticateToken, requireAdmin, orderIdValidation, updateOrderValidation, updateOrderStatus);

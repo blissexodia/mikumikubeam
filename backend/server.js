@@ -3,14 +3,22 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
 const { Sequelize, DataTypes } = require('sequelize');
+const paypal = require('@paypal/checkout-server-sdk');
 const db = require('./models');
 
 // 🎸 Load environment variables
 dotenv.config();
 
-const app = express();
+// 🎷 Configure PayPal client
+const paypalClient = new paypal.core.PayPalHttpClient(
+  new paypal.core.SandboxEnvironment(
+    process.env.PAYPAL_CLIENT_ID,
+    process.env.PAYPAL_CLIENT_SECRET
+  )
+);
 
 // 🛡️ Middleware
+const app = express();
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
@@ -27,7 +35,7 @@ const validatePaymentInput = (req, res, next) => {
   if (typeof amount !== 'number' || amount <= 0) {
     return res.status(400).json({ error: 'Invalid amount' });
   }
-  if (currency !== 'usd') {
+  if (currency !== 'USD') {
     return res.status(400).json({ error: 'Unsupported currency' });
   }
   next();
@@ -51,6 +59,10 @@ const Payment = db.sequelize.define('Payment', {
   isPaid: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  paypalOrderId: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'payments',
@@ -87,13 +99,35 @@ app.post('/api/payment/create-qr-intent', validatePaymentInput, async (req, res)
   try {
     const { amount, currency } = req.body;
     const paymentId = uuidv4();
-    const paymentUrl = `https://mikustore.com/pay/${paymentId}`; // Replace with actual payment provider URL (e.g., PayPal.me)
+
+    // Create PayPal order
+    const request = new paypal.orders.OrdersCreateRequest();
+    request.prefer('return=representation');
+    request.requestBody({
+      intent: 'CAPTURE',
+      purchase_units: [{
+        amount: {
+          currency_code: currency,
+          value: amount.toFixed(2)
+        },
+        description: `Miku Miku Store Payment #${paymentId}`
+      }],
+      application_context: {
+        return_url: `${process.env.FRONTEND_URL}/order-confirmation`,
+        cancel_url: `${process.env.FRONTEND_URL}/checkout`
+      }
+    });
+
+    const response = await paypalClient.execute(request);
+    const paypalOrderId = response.result.id;
+    const paymentUrl = response.result.links.find(link => link.rel === 'approve').href;
 
     await Payment.create({
       paymentId,
       amount,
       currency,
-      isPaid: false
+      isPaid: false,
+      paypalOrderId
     });
 
     res.json({ paymentUrl });
@@ -113,7 +147,21 @@ app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
     if (!payment) {
       return res.status(404).json({ error: 'Payment not found' });
     }
-    res.json({ isPaid: payment.isPaid });
+    if (payment.isPaid) {
+      return res.json({ isPaid: true });
+    }
+
+    // Check PayPal order status
+    const request = new paypal.orders.OrdersGetRequest(payment.paypalOrderId);
+    const response = await paypalClient.execute(request);
+    const isPaid = response.result.status === 'COMPLETED';
+    
+    if (isPaid) {
+      payment.isPaid = true;
+      await payment.save();
+    }
+
+    res.json({ isPaid });
   } catch (error) {
     console.error('❌ QR payment status check error:', error);
     res.status(500).json({ 
@@ -123,7 +171,7 @@ app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
   }
 });
 
-// 🎵 Mock webhook for payment confirmation (replace with actual provider webhook)
+// 🎵 PayPal webhook for payment confirmation
 app.post('/api/payment/confirm-qr/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
