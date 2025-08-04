@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { v4: uuidv4 } = require('uuid');
 const db = require('./models');
 
 // Load environment variables
@@ -40,6 +41,49 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cart', cartRoutes);
+
+// Mock payment storage (replace with database in production)
+const payments = new Map(); // Stores payment intents: { paymentId: { amount, currency, isPaid } }
+
+// QR code payment routes
+app.post('/api/payment/create-qr-intent', (req, res) => {
+  try {
+    const { amount, currency } = req.body;
+    if (!amount || !currency) {
+      return res.status(400).json({ error: 'Amount and currency are required' });
+    }
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    if (currency !== 'usd') {
+      return res.status(400).json({ error: 'Unsupported currency' });
+    }
+
+    const paymentId = uuidv4();
+    const paymentUrl = `https://mikustore.com/pay/${paymentId}`; // Replace with actual payment provider URL (e.g., PayPal.me)
+    payments.set(paymentId, { amount, currency, isPaid: false });
+
+    res.json({ paymentUrl });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/payment/check-qr-status/:paymentId', (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const payment = payments.get(paymentId);
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+    // Mock payment check (replace with actual provider API call)
+    const isPaid = payment.amount > 0; // Replace with real payment verification
+    payment.isPaid = isPaid;
+    res.json({ isPaid });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // 🚫 404 handler
 app.use('*', (req, res) => {
