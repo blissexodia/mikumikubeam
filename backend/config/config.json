@@ -1,23 +1,32 @@
 {
   "development": {
-    "username": "root",
-    "password": null,
-    "database": "database_development",
-    "host": "127.0.0.1",
-    "dialect": "mysql"
+    "database": "mikumikustore",
+    "username": "mikumikustore",
+    "password": "asdfghjkl",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres",
+    "dialectModule": "pg",
+    "logging": false
   },
   "test": {
-    "username": "root",
-    "password": null,
-    "database": "database_test",
-    "host": "127.0.0.1",
-    "dialect": "mysql"
+    "database": "mikumikustore_test",
+    "username": "mikumikustore",
+    "password": "asdfghjkl",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres",
+    "dialectModule": "pg",
+    "logging": false
   },
   "production": {
-    "username": "root",
-    "password": null,
-    "database": "database_production",
-    "host": "127.0.0.1",
-    "dialect": "mysql"
+    "database": "mikumikustore",
+    "username": "mikumikustore",
+    "password": "asdfghjkl",
+    "host": "localhost",
+    "port": 5432,
+    "dialect": "postgres",
+    "dialectModule": "pg",
+    "logging": false
   }
 }
