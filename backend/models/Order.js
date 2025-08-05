@@ -1,18 +1,19 @@
-// models/Order.js
 module.exports = (sequelize, DataTypes) => {
   const Order = sequelize.define('Order', {
-    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'users',  // <== lowercase to match User tableName
+        model: 'users',
         key: 'id'
       }
     },
-    total: { type: DataTypes.DECIMAL(10, 2), allowNull: false, validate: { min: 0 }},
-    status: { type: DataTypes.ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled'), allowNull: false, defaultValue: 'pending' },
-    shippingInfo: { type: DataTypes.JSONB, allowNull: false, validate: { notEmpty: true }}
+    totalAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false, validate: { min: 0 }},
+    status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+    shippingInfo: { type: DataTypes.TEXT, allowNull: false, validate: { notEmpty: true }},
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+    updatedAt: { type: DataTypes.DATE, allowNull: false }
   }, {
     tableName: 'Orders',
     timestamps: true

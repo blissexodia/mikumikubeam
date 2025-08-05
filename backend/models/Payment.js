@@ -1,22 +1,17 @@
 module.exports = (sequelize, DataTypes) => {
   const Payment = sequelize.define('Payment', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     orderId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: true,
       references: {
         model: 'Orders',
         key: 'id'
       }
-    },
-    paymentId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true
     },
     paypalOrderId: {
       type: DataTypes.STRING,
@@ -27,13 +22,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-    currency: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'USD'
-    },
     status: {
-      type: DataTypes.ENUM('pending', 'completed', 'failed', 'refunded'),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'pending'
     },
@@ -42,19 +32,13 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: false
     },
-    paymentMethod: {
-      type: DataTypes.ENUM('paypal', 'qrCode', 'card', 'other'),
-      allowNull: false
-    },
     createdAt: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW
+      allowNull: false
     },
     updatedAt: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW
+      allowNull: false
     }
   }, {
     tableName: 'Payments',

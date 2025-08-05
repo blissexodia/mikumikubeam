@@ -1,17 +1,17 @@
 module.exports = (sequelize, DataTypes) => {
   const Coupon = sequelize.define('Coupon', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     code: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true
     },
-    discountPercentage: {
-      type: DataTypes.INTEGER,
+    discount: {
+      type: DataTypes.DECIMAL(5, 2),
       allowNull: false,
       validate: {
         min: 0,
@@ -23,19 +23,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: true
     },
-    expiresAt: {
+    expiryDate: {
       type: DataTypes.DATE,
       allowNull: false
     },
     createdAt: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW
+      allowNull: false
     },
     updatedAt: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW
+      allowNull: false
     }
   }, {
     tableName: 'Coupons',

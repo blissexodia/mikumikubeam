@@ -1,19 +1,21 @@
 module.exports = (sequelize, DataTypes) => {
   const Cart = sequelize.define('Cart', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     userId: {
-      type: DataTypes.INTEGER, // Matches Users.id (INTEGER)
+      type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id'
       }
-    }
+    },
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+    updatedAt: { type: DataTypes.DATE, allowNull: false }
   }, {
     tableName: 'Carts',
     timestamps: true
@@ -21,12 +23,12 @@ module.exports = (sequelize, DataTypes) => {
 
   const CartItem = sequelize.define('CartItem', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     cartId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'Carts',
@@ -34,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     productId: {
-      type: DataTypes.UUID, // Changed to UUID to match Products.id
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'Products',
@@ -47,7 +49,9 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         min: 1
       }
-    }
+    },
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+    updatedAt: { type: DataTypes.DATE, allowNull: false }
   }, {
     tableName: 'CartItems',
     timestamps: true

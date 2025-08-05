@@ -1,12 +1,12 @@
 module.exports = (sequelize, DataTypes) => {
   const OrderItem = sequelize.define('OrderItem', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     orderId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'Orders',
@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     productId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'Products',
@@ -34,7 +34,9 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         min: 0
       }
-    }
+    },
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+    updatedAt: { type: DataTypes.DATE, allowNull: false }
   }, {
     tableName: 'OrderItems',
     timestamps: true
