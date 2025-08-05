@@ -53,7 +53,7 @@ const LoadingSpinner = ({ size = 'sm' }) => {
 };
 
 // QR Code Payment component
-const QRCodePayment = ({ paymentUrl, onCancel, timeRemaining, isLoading }) => {
+const QRCodePayment = ({ paymentUrl, paymentId, onCancel, timeRemaining, isLoading }) => {
   return (
     <div className="bg-gray-50 rounded-lg p-6 mt-4">
       <h4 className="text-lg font-semibold text-gray-900 mb-4">Pay with QR Code</h4>
@@ -63,7 +63,7 @@ const QRCodePayment = ({ paymentUrl, onCancel, timeRemaining, isLoading }) => {
         </div>
       ) : (
         <>
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-4 transform hover:scale-105 transition-all duration-200">
             <QRCodeCanvas
               value={paymentUrl}
               size={200}
@@ -83,7 +83,7 @@ const QRCodePayment = ({ paymentUrl, onCancel, timeRemaining, isLoading }) => {
               <span>Time remaining: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</span>
             </div>
             <button
-              onClick={onCancel}
+              onClick={() => onCancel(paymentId)}
               className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold focus:underline"
             >
               Cancel QR Payment
@@ -140,7 +140,7 @@ const Checkout = () => {
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [qrPaymentUrl, setQrPaymentUrl] = useState(null);
+  const [qrPayment, setQrPayment] = useState({ url: null, paymentId: null });
   const [qrTimeRemaining, setQrTimeRemaining] = useState(300); // 5 minutes in seconds
   const [isQrLoading, setIsQrLoading] = useState(false);
 
@@ -153,11 +153,11 @@ const Checkout = () => {
   // QR code timer
   useEffect(() => {
     let timer;
-    if (qrPaymentUrl && qrTimeRemaining > 0) {
+    if (qrPayment.url && qrTimeRemaining > 0) {
       timer = setInterval(() => {
         setQrTimeRemaining((prev) => {
           if (prev <= 1) {
-            setQrPaymentUrl(null);
+            setQrPayment({ url: null, paymentId: null });
             setToast({ message: 'QR code payment timed out', type: 'error' });
             return 0;
           }
@@ -166,7 +166,7 @@ const Checkout = () => {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [qrPaymentUrl, qrTimeRemaining]);
+  }, [qrPayment.url, qrTimeRemaining]);
 
   // Pre-fill form with user data
   useEffect(() => {
@@ -220,10 +220,11 @@ const Checkout = () => {
     setIsQrLoading(true);
     try {
       const response = await api.post('/payment/create-qr-intent', {
-        amount: parseFloat(finalTotal) * 100,
-        currency: 'usd'
+        amount: parseFloat(finalTotal),
+        currency: 'USD'
       });
-      setQrPaymentUrl(response.data.paymentUrl);
+      const paymentId = response.data.paymentUrl.split('/').pop();
+      setQrPayment({ url: response.data.paymentUrl, paymentId });
       setQrTimeRemaining(300);
     } catch (error) {
       const errorMessage = handleApiError(error).message;
@@ -234,7 +235,7 @@ const Checkout = () => {
   };
 
   const handleCancelQrPayment = () => {
-    setQrPaymentUrl(null);
+    setQrPayment({ url: null, paymentId: null });
     setQrTimeRemaining(300);
     setPaymentMethod('creditCard');
   };
@@ -253,30 +254,66 @@ const Checkout = () => {
         throw new Error(shippingResult.error);
       }
 
+      let orderId;
       if (paymentMethod === 'qrCode') {
-        const paymentResponse = await api.get(`/payment/check-qr-status/${qrPaymentUrl.split('/').pop()}`);
+        if (!qrPayment.paymentId) {
+          throw new Error('No active QR code payment');
+        }
+        const paymentResponse = await api.get(`/payment/check-qr-status/${qrPayment.paymentId}`);
         if (!paymentResponse.data.isPaid) {
           throw new Error('QR code payment not completed');
         }
+        const orderResponse = await api.post('/orders', {
+          items: items.map(item => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          shippingInfo: formData,
+          total: parseFloat(finalTotal),
+          paymentMethod: 'paypal'
+        });
+        orderId = orderResponse.data.orderId;
+      } else if (paymentMethod === 'paypal') {
+        const paymentResponse = await api.post('/payment/create-qr-intent', {
+          amount: parseFloat(finalTotal),
+          currency: 'USD'
+        });
+        const paymentId = paymentResponse.data.paymentUrl.split('/').pop();
+        const paymentStatus = await api.get(`/payment/check-qr-status/${paymentId}`);
+        if (!paymentStatus.data.isPaid) {
+          throw new Error('PayPal payment not completed');
+        }
+        const orderResponse = await api.post('/orders', {
+          items: items.map(item => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          shippingInfo: formData,
+          total: parseFloat(finalTotal),
+          paymentMethod: 'paypal'
+        });
+        orderId = orderResponse.data.orderId;
       } else {
         const paymentResponse = await api.post('/payment/create-intent', {
-          amount: parseFloat(finalTotal) * 100,
-          currency: 'usd'
+          amount: parseFloat(finalTotal),
+          currency: 'USD'
         });
         const paymentIntentId = paymentResponse.data.paymentIntentId;
         await api.post('/payment/confirm', { paymentIntentId });
+        const orderResponse = await api.post('/orders', {
+          items: items.map(item => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          shippingInfo: formData,
+          total: parseFloat(finalTotal),
+          paymentMethod: 'creditCard'
+        });
+        orderId = orderResponse.data.orderId;
       }
-
-      const orderResponse = await api.post('/orders', {
-        items: items.map(item => ({
-          productId: item.id,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        shippingInfo: formData,
-        total: parseFloat(finalTotal),
-        paymentMethod
-      });
 
       await clearCart(true);
       if (isAuthenticated) {
@@ -285,7 +322,7 @@ const Checkout = () => {
 
       setToast({ message: 'Order placed successfully!', type: 'success' });
       setTimeout(() => {
-        navigate('/order-confirmation', { state: { orderId: orderResponse.data.orderId } });
+        navigate('/order-confirmation', { state: { orderId } });
       }, 2000);
     } catch (error) {
       const errorMessage = handleApiError(error).message;
@@ -548,7 +585,7 @@ const Checkout = () => {
                           checked={paymentMethod === 'creditCard'}
                           onChange={(e) => {
                             setPaymentMethod(e.target.value);
-                            setQrPaymentUrl(null);
+                            setQrPayment({ url: null, paymentId: null });
                           }}
                           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                         />
@@ -563,9 +600,9 @@ const Checkout = () => {
                           checked={paymentMethod === 'paypal'}
                           onChange={(e) => {
                             setPaymentMethod(e.target.value);
-                            setQrPaymentUrl(null);
+                            setQrPayment({ url: null, paymentId: null });
                           }}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                          className="h-4 w-4 text-indig-600 focus:ring-indigo-500"
                         />
                         <img
                           src="https://www.paypalobjects.com/webstatic/icon/pp258.png"
@@ -592,7 +629,8 @@ const Checkout = () => {
                     </div>
                     {paymentMethod === 'qrCode' && (
                       <QRCodePayment
-                        paymentUrl={qrPaymentUrl}
+                        paymentUrl={qrPayment.url}
+                        paymentId={qrPayment.paymentId}
                         onCancel={handleCancelQrPayment}
                         timeRemaining={qrTimeRemaining}
                         isLoading={isQrLoading}
@@ -604,7 +642,7 @@ const Checkout = () => {
                   <div className="pt-6 border-t border-gray-200">
                     <button
                       type="submit"
-                      disabled={isSubmitting || (paymentMethod === 'qrCode' && !qrPaymentUrl)}
+                      disabled={isSubmitting || (paymentMethod === 'qrCode' && !qrPayment.url)}
                       className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold hover:from-indigo-700 hover:to-purple-700 focus:ring-4 focus:ring-indigo-200 transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (

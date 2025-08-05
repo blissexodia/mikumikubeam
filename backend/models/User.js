@@ -74,7 +74,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     tableName: 'users',
     timestamps: true,
-    paranoid: true  // adds deletedAt column for soft deletes (optional)
+    paranoid: true
   });
 
   // Instance methods
@@ -94,8 +94,10 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'userId',
       as: 'orders'
     });
-
-    // Add other associations if needed later
+    User.hasOne(models.Cart, {
+      foreignKey: 'userId',
+      as: 'cart'
+    });
   };
 
   return User;

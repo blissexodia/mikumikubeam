@@ -61,7 +61,7 @@ export const categoriesAPI = {
   getById: (id) => api.get(`/categories/${id}`),
 };
 
-// Cart API calls (if you want server-side cart)
+// Cart API calls
 export const cartAPI = {
   get: () => api.get('/cart'),
   add: (productId, quantity) => api.post('/cart', { productId, quantity }),
@@ -72,7 +72,9 @@ export const cartAPI = {
 
 // Orders API calls
 export const ordersAPI = {
-  create: (orderData) => api.post('/orders', orderData),
+  create: (orderData) => api.post('/orders', orderData, {
+    headers: { 'X-Payment-Id': orderData.paymentId }
+  }),
   getAll: () => api.get('/orders'),
   getById: (id) => api.get(`/orders/${id}`),
   updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
@@ -88,11 +90,15 @@ export const userAPI = {
 
 // Payment API calls
 export const paymentAPI = {
-  createPaymentIntent: (amount, currency = 'usd') => 
+  createPaymentIntent: (amount, currency = 'USD') => 
     api.post('/payment/create-intent', { amount, currency }),
   confirmPayment: (paymentIntentId) => 
     api.post('/payment/confirm', { paymentIntentId }),
   getPaymentMethods: () => api.get('/payment/methods'),
+  createQrPaymentIntent: (amount, currency = 'USD') => 
+    api.post('/payment/create-qr-intent', { amount, currency }),
+  checkQrPaymentStatus: (paymentId) => 
+    api.get(`/payment/check-qr-status/${paymentId}`),
 };
 
 // Utility function to handle API errors

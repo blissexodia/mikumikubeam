@@ -1,10 +1,46 @@
-const mongoose = require('mongoose');
+module.exports = (sequelize, DataTypes) => {
+  const Coupon = sequelize.define('Coupon', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
+    },
+    code: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true
+    },
+    discountPercentage: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: {
+        min: 0,
+        max: 100
+      }
+    },
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    },
+    expiresAt: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    }
+  }, {
+    tableName: 'Coupons',
+    timestamps: true
+  });
 
-const couponSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true, uppercase: true },
-  discountPercentage: { type: Number, required: true, min: 0, max: 100 },
-  expiresAt: { type: Date, required: true },
-  isActive: { type: Boolean, default: true }
-}, { timestamps: true });
-
-module.exports = mongoose.model('Coupon', couponSchema);
+  return Coupon;
+};

@@ -1,18 +1,8 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
-const { authenticateToken } = require('../middleware/auth');
+const { validationResult } = require('express-validator');
 const { Cart, CartItem, Product, Coupon } = require('../models');
 
-const router = express.Router();
-
-// Validation for adding/updating cart items
-const cartItemValidation = [
-  body('productId').isUUID().withMessage('Valid product ID is required'),
-  body('quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1')
-];
-
 // Get user’s cart
-router.get('/', authenticateToken, async (req, res) => {
+const getCart = async (req, res) => {
   try {
     const userId = req.user.id;
     const cart = await Cart.findOne({
@@ -50,7 +40,7 @@ router.get('/', authenticateToken, async (req, res) => {
       product: {
         id: item.product.id,
         name: item.product.name,
-        price: parseFloat(item.product.price),
+        price: item.product.price,
         image: item.product.image,
         stock: item.product.stock,
         slug: item.product.slug,
@@ -66,10 +56,10 @@ router.get('/', authenticateToken, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
 // Add item to cart
-router.post('/', authenticateToken, cartItemValidation, async (req, res) => {
+const addToCart = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -128,7 +118,7 @@ router.post('/', authenticateToken, cartItemValidation, async (req, res) => {
         product: {
           id: updatedCartItem.product.id,
           name: updatedCartItem.product.name,
-          price: parseFloat(updatedCartItem.product.price),
+          price: updatedCartItem.product.price,
           image: updatedCartItem.product.image,
           stock: updatedCartItem.product.stock,
           slug: updatedCartItem.product.slug,
@@ -143,10 +133,10 @@ router.post('/', authenticateToken, cartItemValidation, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
 // Update cart item quantity
-router.put('/', authenticateToken, cartItemValidation, async (req, res) => {
+const updateCartItem = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -210,7 +200,7 @@ router.put('/', authenticateToken, cartItemValidation, async (req, res) => {
         product: {
           id: updatedCartItem.product.id,
           name: updatedCartItem.product.name,
-          price: parseFloat(updatedCartItem.product.price),
+          price: updatedCartItem.product.price,
           image: updatedCartItem.product.image,
           stock: updatedCartItem.product.stock,
           slug: updatedCartItem.product.slug,
@@ -225,10 +215,10 @@ router.put('/', authenticateToken, cartItemValidation, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
 // Remove item from cart
-router.delete('/:productId', authenticateToken, async (req, res) => {
+const removeFromCart = async (req, res) => {
   try {
     const { productId } = req.params;
     const userId = req.user.id;
@@ -252,10 +242,10 @@ router.delete('/:productId', authenticateToken, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
 // Clear cart
-router.delete('/', authenticateToken, async (req, res) => {
+const clearCart = async (req, res) => {
   try {
     const userId = req.user.id;
     const cart = await Cart.findOne({ where: { userId } });
@@ -272,10 +262,10 @@ router.delete('/', authenticateToken, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
 // Sync local cart with server
-router.post('/sync', authenticateToken, async (req, res) => {
+const syncCart = async (req, res) => {
   try {
     const { items } = req.body;
     const userId = req.user.id;
@@ -295,14 +285,10 @@ router.post('/sync', authenticateToken, async (req, res) => {
     // Add new items
     const cartItems = [];
     for (const item of items) {
-      if (!item.productId || !item.quantity) {
-        continue;
-      }
+      if (!item.productId || !item.quantity) continue;
 
       const product = await Product.findOne({ where: { id: item.productId, isActive: true } });
-      if (!product) {
-        continue;
-      }
+      if (!product) continue;
 
       if (product.stock !== null && item.quantity > product.stock) {
         continue;
@@ -339,7 +325,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
         product: {
           id: populatedCartItem.product.id,
           name: populatedCartItem.product.name,
-          price: parseFloat(populatedCartItem.product.price),
+          price: populatedCartItem.product.price,
           image: populatedCartItem.product.image,
           stock: populatedCartItem.product.stock,
           slug: populatedCartItem.product.slug,
@@ -356,10 +342,10 @@ router.post('/sync', authenticateToken, async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
 // Validate promo code
-router.post('/coupons/validate', async (req, res) => {
+const validateCoupon = async (req, res) => {
   try {
     const { code } = req.body;
     if (!code) {
@@ -383,6 +369,14 @@ router.post('/coupons/validate', async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : {}
     });
   }
-});
+};
 
-module.exports = router;
+module.exports = {
+  getCart,
+  addToCart,
+  updateCartItem,
+  removeFromCart,
+  clearCart,
+  syncCart,
+  validateCoupon
+};

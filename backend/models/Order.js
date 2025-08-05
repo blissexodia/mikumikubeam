@@ -1,4 +1,3 @@
-// models/Order.js
 module.exports = (sequelize, DataTypes) => {
   const Order = sequelize.define('Order', {
     id: {
@@ -6,78 +5,50 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    orderNumber: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'id'
+      }
     },
-    status: {
-      type: DataTypes.ENUM('pending', 'processing', 'completed', 'cancelled', 'refunded'),
-      defaultValue: 'pending'
-    },
-    totalAmount: {
+    total: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
       validate: {
         min: 0
       }
     },
-    currency: {
-      type: DataTypes.STRING(3),
-      defaultValue: 'USD'
-    },
-    paymentStatus: {
-      type: DataTypes.ENUM('pending', 'paid', 'failed', 'refunded'),
+    status: {
+      type: DataTypes.ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled'),
+      allowNull: false,
       defaultValue: 'pending'
     },
-    paymentMethod: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    paymentId: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    customerEmail: {
-      type: DataTypes.STRING,
+    shippingInfo: {
+      type: DataTypes.JSONB,
       allowNull: false,
       validate: {
-        isEmail: true
+        notEmpty: true
       }
-    },
-    customerName: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    notes: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    deliveredAt: {
-      type: DataTypes.DATE,
-      allowNull: true
     }
   }, {
-    hooks: {
-      beforeCreate: (order) => {
-        // Generate order number
-        const timestamp = Date.now().toString();
-        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        order.orderNumber = `MK${timestamp.slice(-6)}${random}`;
-      }
-    }
+    tableName: 'Orders',
+    timestamps: true
   });
 
-  // Associations
-  Order.associate = function(models) {
+  Order.associate = (models) => {
     Order.belongsTo(models.User, {
       foreignKey: 'userId',
       as: 'user'
     });
-    
     Order.hasMany(models.OrderItem, {
       foreignKey: 'orderId',
-      as: 'items'
+      as: 'orderItems'
+    });
+    Order.hasOne(models.Payment, {
+      foreignKey: 'orderId',
+      as: 'payment'
     });
   };
 

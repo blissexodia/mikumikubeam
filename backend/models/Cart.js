@@ -7,10 +7,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     userId: {
       type: DataTypes.UUID,
-      allowNull: false
+      allowNull: false,
+      unique: true,
+      references: {
+        model: 'Users',
+        key: 'id'
+      }
     }
   }, {
-    tableName: 'carts',
+    tableName: 'Carts',
     timestamps: true
   });
 
@@ -22,30 +27,52 @@ module.exports = (sequelize, DataTypes) => {
     },
     cartId: {
       type: DataTypes.UUID,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'Carts',
+        key: 'id'
+      }
     },
     productId: {
       type: DataTypes.UUID,
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'Products',
+        key: 'id'
+      }
     },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      validate: { min: 1 }
+      validate: {
+        min: 1
+      }
     }
   }, {
-    tableName: 'cart_items',
+    tableName: 'CartItems',
     timestamps: true
   });
 
   Cart.associate = (models) => {
-    Cart.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
-    Cart.hasMany(models.CartItem, { foreignKey: 'cartId', as: 'items' });
+    Cart.belongsTo(models.User, {
+      foreignKey: 'userId',
+      as: 'user'
+    });
+    Cart.hasMany(models.CartItem, {
+      foreignKey: 'cartId',
+      as: 'cartItems'
+    });
   };
 
   CartItem.associate = (models) => {
-    CartItem.belongsTo(models.Cart, { foreignKey: 'cartId', as: 'cart' });
-    CartItem.belongsTo(models.Product, { foreignKey: 'productId', as: 'product' });
+    CartItem.belongsTo(models.Cart, {
+      foreignKey: 'cartId',
+      as: 'cart'
+    });
+    CartItem.belongsTo(models.Product, {
+      foreignKey: 'productId',
+      as: 'product'
+    });
   };
 
   return { Cart, CartItem };

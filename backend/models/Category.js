@@ -1,4 +1,3 @@
-// models/Category.js
 module.exports = (sequelize, DataTypes) => {
   const Category = sequelize.define('Category', {
     id: {
@@ -15,44 +14,20 @@ module.exports = (sequelize, DataTypes) => {
         len: [2, 100]
       }
     },
-    slug: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        notEmpty: true,
-        is: /^[a-z0-9-]+$/i
-      }
-    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true
     },
-    type: {
-      type: DataTypes.ENUM('subscription', 'giftcard'),
-      allowNull: false
-    },
-    icon: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    color: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      defaultValue: '#14B8A6' // Teal default
-    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
-    },
-    sortOrder: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0
     }
+  }, {
+    tableName: 'Categories',
+    timestamps: true
   });
 
-  // Associations
-  Category.associate = function(models) {
+  Category.associate = (models) => {
     Category.hasMany(models.Product, {
       foreignKey: 'categoryId',
       as: 'products'

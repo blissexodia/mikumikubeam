@@ -1,6 +1,13 @@
-// controllers/orderController.js
 const { validationResult } = require('express-validator');
-const { Order, OrderItem, Product, User } = require('../models');
+const { Order, OrderItem, Product, User, Payment } = require('../models');
+const paypal = require('@paypal/checkout-server-sdk');
+
+const paypalClient = new paypal.core.PayPalHttpClient(
+  new paypal.core.SandboxEnvironment(
+    process.env.PAYPAL_CLIENT_ID,
+    process.env.PAYPAL_CLIENT_SECRET
+  )
+);
 
 // Create new order
 const createOrder = async (req, res) => {
@@ -16,12 +23,34 @@ const createOrder = async (req, res) => {
       });
     }
 
-    const { items, paymentMethod } = req.body;
-    const userId = req.user.id;
+    const { items, paymentMethod, shippingInfo } = req.body;
+    const userId = req.user ? req.user.id : null;
 
     if (!items || items.length === 0) {
       await transaction.rollback();
       return res.status(400).json({ message: 'Order must contain at least one item' });
+    }
+
+    // Validate PayPal payment if applicable
+    let paymentVerified = false;
+    if (['paypal', 'qrCode'].includes(paymentMethod)) {
+      const paymentId = req.headers['x-payment-id'];
+      if (!paymentId) {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Payment ID required for PayPal or QR code payment' });
+      }
+      const payment = await Payment.findOne({ where: { paymentId } });
+      if (!payment || !payment.isPaid) {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Payment not completed or not found' });
+      }
+      const paypalRequest = new paypal.orders.OrdersGetRequest(payment.paypalOrderId);
+      const paypalResponse = await paypalClient.execute(paypalRequest);
+      if (paypalResponse.result.status !== 'COMPLETED') {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'PayPal payment not completed' });
+      }
+      paymentVerified = true;
     }
 
     // Calculate total and validate products
@@ -64,17 +93,18 @@ const createOrder = async (req, res) => {
     }
 
     // Get user info
-    const user = await User.findByPk(userId);
+    const user = userId ? await User.findByPk(userId) : null;
 
     // Create order
     const order = await Order.create({
       userId,
       totalAmount,
       paymentMethod,
-      customerEmail: user.email,
-      customerName: `${user.firstName} ${user.lastName}`,
-      status: 'pending',
-      paymentStatus: 'pending'
+      customerEmail: shippingInfo?.email || user?.email || 'guest@example.com',
+      customerName: shippingInfo?.fullName || (user ? `${user.firstName} ${user.lastName}` : 'Guest'),
+      status: paymentVerified ? 'processing' : 'pending',
+      paymentStatus: paymentVerified ? 'paid' : 'pending',
+      shippingInfo: shippingInfo || null
     }, { transaction });
 
     // Create order items
@@ -114,12 +144,16 @@ const createOrder = async (req, res) => {
 
     res.status(201).json({
       message: 'Order created successfully',
-      order: completeOrder
+      order: completeOrder,
+      orderId: order.id
     });
   } catch (error) {
     await transaction.rollback();
     console.error('Create order error:', error);
-    res.status(500).json({ message: 'Server error creating order' });
+    res.status(500).json({ 
+      message: 'Server error creating order',
+      error: process.env.NODE_ENV === 'development' ? error.message : {}
+    });
   }
 };
 
@@ -170,7 +204,10 @@ const getUserOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Get user orders error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : {}
+    });
   }
 };
 
@@ -215,7 +252,10 @@ const getOrderById = async (req, res) => {
     res.json({ order });
   } catch (error) {
     console.error('Get order error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : {}
+    });
   }
 };
 
@@ -269,7 +309,10 @@ const updateOrderStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Update order error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : {}
+    });
   }
 };
 

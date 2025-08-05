@@ -102,7 +102,7 @@ const cartReducer = (state, action) => {
     case 'SET_SHIPPING_INFO':
       return {
         ...state,
-        shippingInfo: { ...state.shippingInfo, ...action.payload },
+        shippingInfo: { ...action.payload },
         lastUpdated: new Date().toISOString(),
         error: null
       };
@@ -225,7 +225,7 @@ export const CartProvider = ({ children }) => {
     if (isAuthenticated) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        await api.post('/api/cart', { productId: product.id, quantity: options.quantity || 1 });
+        await api.post('/cart', { productId: product.id, quantity: options.quantity || 1 });
         await syncWithServer();
         return { success: true };
       } catch (error) {
@@ -245,8 +245,7 @@ export const CartProvider = ({ children }) => {
     if (isAuthenticated) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        const newItems = state.items.filter(item => item.id !== productId);
-        await api.post('/api/cart/sync', { items: newItems });
+        await api.delete(`/cart/${productId}`);
         await syncWithServer();
         return { success: true };
       } catch (error) {
@@ -259,31 +258,31 @@ export const CartProvider = ({ children }) => {
       dispatch({ type: 'CLEAR_ERROR' });
       return { success: true };
     }
-  }, [isAuthenticated, state.items]);
+  }, [isAuthenticated]);
 
   // Update quantity
   const updateQuantity = useCallback(async (productId, quantity) => {
     if (quantity < 0) {
       dispatch({ type: 'SET_ERROR', payload: 'Quantity cannot be negative' });
-      return { success: false };
+      return { success: false, error: 'Quantity cannot be negative' };
     }
 
     const item = state.items.find(item => item.id === productId);
     if (!item) {
       dispatch({ type: 'SET_ERROR', payload: 'Item not found in cart' });
-      return { success: false };
+      return { success: false, error: 'Item not found in cart' };
     }
 
     const maxQuantity = item.maxQuantity || 99;
     if (quantity > maxQuantity) {
       dispatch({ type: 'SET_ERROR', payload: `Maximum quantity is ${maxQuantity}` });
-      return { success: false };
+      return { success: false, error: `Maximum quantity is ${maxQuantity}` };
     }
 
     if (isAuthenticated) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        await api.post('/api/cart', { productId, quantity });
+        await api.put('/cart', { productId, quantity });
         await syncWithServer();
         return { success: true };
       } catch (error) {
@@ -308,7 +307,7 @@ export const CartProvider = ({ children }) => {
     if (isAuthenticated) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        await api.post('/api/cart/sync', { items: [] });
+        await api.delete('/cart');
         await syncWithServer();
         return { success: true };
       } catch (error) {
@@ -318,6 +317,7 @@ export const CartProvider = ({ children }) => {
       }
     } else {
       dispatch({ type: 'CLEAR_CART' });
+      dispatch({ type: 'CLEAR_ERROR' });
       return { success: true };
     }
   }, [isAuthenticated, state.items.length]);
@@ -328,7 +328,21 @@ export const CartProvider = ({ children }) => {
     const missingFields = requiredFields.filter(field => !shippingData[field]?.trim());
     
     if (missingFields.length > 0) {
-      const error = `Please fill in: ${missingFields.join(', ')}`;
+      const error = `Please fill in: ${missingFields
+        .map(field => field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1'))
+        .join(', ')}`;
+      dispatch({ type: 'SET_ERROR', payload: error });
+      return { success: false, error };
+    }
+
+    if (shippingData.email && !/\S+@\S+\.\S+/.test(shippingData.email)) {
+      const error = 'Please enter a valid email';
+      dispatch({ type: 'SET_ERROR', payload: error });
+      return { success: false, error };
+    }
+
+    if (shippingData.zipCode && !/^\d{5}(-\d{4})?$/.test(shippingData.zipCode)) {
+      const error = 'Please enter a valid ZIP code';
       dispatch({ type: 'SET_ERROR', payload: error });
       return { success: false, error };
     }
@@ -344,33 +358,28 @@ export const CartProvider = ({ children }) => {
 
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const response = await api.post('/api/cart/sync', {
-        items: state.items.map(item => ({
-          productId: item.id,
-          quantity: item.quantity
-        }))
-      });
+      const response = await api.get('/cart');
 
-      const serverItems = response.data.cartItems.map(item => ({
+      const serverItems = response.data.cartItems?.map(item => ({
         id: item.productId,
         name: item.product.name,
         price: parseFloat(item.product.price),
         image: item.product.image,
         quantity: item.quantity,
         maxQuantity: item.product.stock || 99,
-        category: item.product.category.name,
+        category: item.product.category?.name || 'Uncategorized',
         sku: item.product.slug,
         addedAt: new Date().toISOString()
-      }));
+      })) || [];
 
       dispatch({ type: 'SYNC_WITH_SERVER', payload: { items: serverItems } });
       return { success: true };
     } catch (error) {
       console.error('Cart sync failed:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to sync cart with server' });
-      return { success: false };
+      return { success: false, error: error.response?.data?.message || 'Failed to sync cart' };
     }
-  }, [isAuthenticated, user, state.items]);
+  }, [isAuthenticated, user]);
 
   // Clear error
   const clearError = useCallback(() => {
