@@ -7,7 +7,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     orderId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: true, // This remains true for cases where a payment might not yet be associated with an order
       references: {
         model: 'Orders',
         key: 'id'

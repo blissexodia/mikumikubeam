@@ -14,37 +14,44 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Validation rules
+// Validation rules for registration
 const registerValidation = [
   body('firstName')
     .trim()
     .isLength({ min: 2, max: 50 })
-    .withMessage('First name must be between 2 and 50 characters'),
+    .withMessage('First name must be between 2 and 50 characters')
+    .notEmpty().withMessage('First name is required'),
   body('lastName')
     .trim()
     .isLength({ min: 2, max: 50 })
-    .withMessage('Last name must be between 2 and 50 characters'),
+    .withMessage('Last name must be between 2 and 50 characters')
+    .notEmpty().withMessage('Last name is required'),
   body('email')
     .isEmail()
     .normalizeEmail()
-    .withMessage('Please enter a valid email'),
+    .withMessage('Please enter a valid email')
+    .notEmpty().withMessage('Email is required'),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
     .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+    .notEmpty().withMessage('Password is required')
 ];
 
+// Validation rules for login
 const loginValidation = [
   body('email')
     .isEmail()
     .normalizeEmail()
-    .withMessage('Please enter a valid email'),
+    .withMessage('Please enter a valid email')
+    .notEmpty().withMessage('Email is required'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
 ];
 
+// Validation rules for updating profile
 const updateProfileValidation = [
   body('firstName')
     .optional()
@@ -63,6 +70,7 @@ const updateProfileValidation = [
     .withMessage('Please enter a valid email')
 ];
 
+// Validation rules for changing password
 const changePasswordValidation = [
   body('currentPassword')
     .notEmpty()

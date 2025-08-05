@@ -3,15 +3,31 @@ module.exports = (sequelize, DataTypes) => {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: false, // Changed to false because an order should generally be tied to a user
       references: {
         model: 'users',
         key: 'id'
       }
     },
-    totalAmount: { type: DataTypes.DECIMAL(10, 2), allowNull: false, validate: { min: 0 }},
-    status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-    shippingInfo: { type: DataTypes.TEXT, allowNull: false, validate: { notEmpty: true }},
+    totalAmount: { 
+      type: DataTypes.DECIMAL(10, 2), 
+      allowNull: false, 
+      defaultValue: 0, // Default value added to prevent null values
+      validate: { min: 0 }
+    },
+    status: { 
+      type: DataTypes.STRING, 
+      allowNull: false, 
+      defaultValue: 'pending', 
+      validate: {
+        isIn: [['pending', 'completed', 'shipped', 'cancelled']] // Added possible statuses
+      }
+    },
+    shippingInfo: { 
+      type: DataTypes.TEXT, 
+      allowNull: false, 
+      validate: { notEmpty: true }
+    },
     createdAt: { type: DataTypes.DATE, allowNull: false },
     updatedAt: { type: DataTypes.DATE, allowNull: false }
   }, {

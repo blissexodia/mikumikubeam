@@ -39,9 +39,9 @@ const orderIdValidation = [
 ];
 
 // Protected routes
-router.post('/', authenticateToken, createOrderValidation, createOrder);
-router.get('/user', authenticateToken, getUserOrders);
-router.get('/:id', authenticateToken, orderIdValidation, getOrderById);
+router.post('/', authenticateToken, createOrderValidation, createOrder);  // Create order
+router.get('/user', authenticateToken, getUserOrders);  // Get orders of the user
+router.get('/:id', authenticateToken, orderIdValidation, getOrderById);  // Get order details by ID
 
 // Public route for order details QR code
 router.get('/details/:orderId', orderIdValidation, async (req, res) => {
@@ -80,7 +80,7 @@ router.get('/details/:orderId', orderIdValidation, async (req, res) => {
   }
 });
 
-// Admin route
+// Admin route to update order status
 router.put('/:id/status', authenticateToken, requireAdmin, orderIdValidation, updateOrderValidation, updateOrderStatus);
 
 module.exports = router;

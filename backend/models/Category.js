@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       unique: true,
       validate: {
         notEmpty: true,
-        len: [2, 100]
+        len: [2, 100] // Ensure the name is between 2 and 100 characters
       }
     },
     description: {
@@ -20,15 +20,25 @@ module.exports = (sequelize, DataTypes) => {
     },
     isActive: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true
+      defaultValue: true // Default is true, meaning the category is active by default
     },
-    createdAt: { type: DataTypes.DATE, allowNull: false },
-    updatedAt: { type: DataTypes.DATE, allowNull: false }
+    createdAt: { 
+      type: DataTypes.DATE, 
+      allowNull: false, 
+      defaultValue: DataTypes.NOW // Default to current timestamp
+    },
+    updatedAt: { 
+      type: DataTypes.DATE, 
+      allowNull: false, 
+      defaultValue: DataTypes.NOW // Default to current timestamp
+    }
   }, {
-    tableName: 'Categories',
-    timestamps: true
+    tableName: 'Categories', 
+    timestamps: true,
+    paranoid: true // Enables soft deletion (adds deletedAt field)
   });
 
+  // Associations
   Category.associate = (models) => {
     Category.hasMany(models.Product, {
       foreignKey: 'categoryId',

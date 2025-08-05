@@ -25,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
-        min: 1
+        min: 1,
+        max: 100 // Added max quantity validation
       }
     },
     price: {
@@ -33,7 +34,8 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: {
         min: 0
-      }
+      },
+      defaultValue: 0 // Optional: Default value added for price
     },
     createdAt: { type: DataTypes.DATE, allowNull: false },
     updatedAt: { type: DataTypes.DATE, allowNull: false }

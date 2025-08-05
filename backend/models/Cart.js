@@ -1,4 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
+  // Cart model
   const Cart = sequelize.define('Cart', {
     id: {
       type: DataTypes.INTEGER,
@@ -10,17 +11,19 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: true,
       references: {
-        model: 'users',
+        model: 'Users', // Referencing the 'Users' table
         key: 'id'
       }
     },
-    createdAt: { type: DataTypes.DATE, allowNull: false },
-    updatedAt: { type: DataTypes.DATE, allowNull: false }
+    createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
   }, {
     tableName: 'Carts',
-    timestamps: true
+    timestamps: true,
+    paranoid: true // Ensures soft deletion (adds deletedAt column)
   });
 
+  // CartItem model
   const CartItem = sequelize.define('CartItem', {
     id: {
       type: DataTypes.INTEGER,
@@ -39,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Products',
+        model: 'Products', // Referencing the 'Products' table
         key: 'id'
       }
     },
@@ -50,13 +53,15 @@ module.exports = (sequelize, DataTypes) => {
         min: 1
       }
     },
-    createdAt: { type: DataTypes.DATE, allowNull: false },
-    updatedAt: { type: DataTypes.DATE, allowNull: false }
+    createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
   }, {
     tableName: 'CartItems',
-    timestamps: true
+    timestamps: true,
+    paranoid: true // Ensures soft deletion (adds deletedAt column)
   });
 
+  // Associations
   Cart.associate = (models) => {
     Cart.belongsTo(models.User, {
       foreignKey: 'userId',

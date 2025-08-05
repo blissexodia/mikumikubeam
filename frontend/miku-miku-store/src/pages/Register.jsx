@@ -100,7 +100,7 @@ const Register = () => {
     
     if (result.success) {
       await syncWithServer(); // Sync cart after successful registration
-      navigate('/');
+      navigate('/'); // Redirect to home page
     }
   };
 
@@ -415,14 +415,6 @@ const Register = () => {
                 <span className="ml-2">Facebook</span>
               </button>
             </div>
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-gray-600">
-              By creating an account, you agree to receive promotional emails from Miku Miku Store.
-              You can unsubscribe at any time.
-            </p>
           </div>
         </div>
       </div>

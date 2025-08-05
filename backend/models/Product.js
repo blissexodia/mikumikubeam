@@ -16,7 +16,12 @@ module.exports = (sequelize, DataTypes) => {
     slug: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true
+      unique: true,
+      // You might want to add a custom validation to ensure slug is SEO friendly
+      validate: {
+        notEmpty: true,
+        len: [2, 255]
+      }
     },
     price: {
       type: DataTypes.DECIMAL(10, 2),
@@ -35,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     image: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true // You could change this to false if every product must have an image
     },
     categoryId: {
       type: DataTypes.INTEGER,

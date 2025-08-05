@@ -108,7 +108,7 @@ app.post('/api/payment/create-qr-intent', validatePaymentInput, async (req, res)
     console.error('QR payment creation error:', error);
     res.status(500).json({ 
       message: 'Failed to create payment intent',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal Server Error'
     });
   }
 });
@@ -138,7 +138,7 @@ app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
     console.error('QR payment status check error:', error);
     res.status(500).json({ 
       message: 'Failed to check payment status',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal Server Error'
     });
   }
 });
@@ -157,13 +157,14 @@ app.post('/api/payment/confirm-qr/:paymentId', async (req, res) => {
     console.error('Payment confirmation error:', error);
     res.status(500).json({ 
       message: 'Failed to confirm payment',
-      error: process.env.NODE_ENV === 'development' ? error.message : {}
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal Server Error'
     });
   }
 });
 
 // 404 handler
 app.use('*', (req, res) => {
+  console.log(`Route not found: ${req.method} ${req.originalUrl}`);  // Log the request path
   res.status(404).json({ message: 'Route not found' });
 });
 
@@ -172,7 +173,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error'
   });
 });
 
