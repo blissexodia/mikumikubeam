@@ -2,14 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
-const { Sequelize, DataTypes } = require('sequelize');
 const paypal = require('@paypal/checkout-server-sdk');
 const db = require('./models');
 
-// 🎸 Load environment variables
+// Load environment variables
 dotenv.config();
 
-// 🎷 Configure PayPal client
+// Configure PayPal client
 const paypalClient = new paypal.core.PayPalHttpClient(
   new paypal.core.SandboxEnvironment(
     process.env.PAYPAL_CLIENT_ID,
@@ -17,7 +16,7 @@ const paypalClient = new paypal.core.PayPalHttpClient(
   )
 );
 
-// 🛡️ Middleware
+// Middleware
 const app = express();
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -26,7 +25,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🎹 Validate payment input middleware
+// Validate payment input middleware
 const validatePaymentInput = (req, res, next) => {
   const { amount, currency } = req.body;
   if (!amount || !currency) {
@@ -41,35 +40,7 @@ const validatePaymentInput = (req, res, next) => {
   next();
 };
 
-// 🎻 Define Payment model for Sequelize
-const Payment = db.sequelize.define('Payment', {
-  paymentId: {
-    type: DataTypes.STRING,
-    primaryKey: true,
-    allowNull: false
-  },
-  amount: {
-    type: DataTypes.FLOAT,
-    allowNull: false
-  },
-  currency: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  isPaid: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
-  paypalOrderId: {
-    type: DataTypes.STRING,
-    allowNull: true
-  }
-}, {
-  tableName: 'payments',
-  timestamps: true
-});
-
-// ✅ Health check
+// Health check
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Miku Miku Store Backend Running! 🎵',
@@ -78,7 +49,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// 📦 Import routes
+// Import routes
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -86,7 +57,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
-// 🧩 Use routes
+// Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -94,13 +65,12 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cart', cartRoutes);
 
-// 🎤 QR code payment routes
+// QR code payment routes
 app.post('/api/payment/create-qr-intent', validatePaymentInput, async (req, res) => {
   try {
     const { amount, currency } = req.body;
     const paymentId = uuidv4();
 
-    // Create PayPal order
     const request = new paypal.orders.OrdersCreateRequest();
     request.prefer('return=representation');
     request.requestBody({
@@ -122,17 +92,20 @@ app.post('/api/payment/create-qr-intent', validatePaymentInput, async (req, res)
     const paypalOrderId = response.result.id;
     const paymentUrl = response.result.links.find(link => link.rel === 'approve').href;
 
-    await Payment.create({
-      paymentId,
+    await db.Payment.create({
+      id: paymentId,
       amount,
       currency,
       isPaid: false,
-      paypalOrderId
+      paypalOrderId,
+      orderId: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
-    res.json({ paymentUrl });
+    res.json({ paymentUrl, paymentId });
   } catch (error) {
-    console.error('❌ QR payment creation error:', error);
+    console.error('QR payment creation error:', error);
     res.status(500).json({ 
       message: 'Failed to create payment intent',
       error: process.env.NODE_ENV === 'development' ? error.message : {}
@@ -143,7 +116,7 @@ app.post('/api/payment/create-qr-intent', validatePaymentInput, async (req, res)
 app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
-    const payment = await Payment.findOne({ where: { paymentId } });
+    const payment = await db.Payment.findOne({ where: { id: paymentId } });
     if (!payment) {
       return res.status(404).json({ error: 'Payment not found' });
     }
@@ -151,7 +124,6 @@ app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
       return res.json({ isPaid: true });
     }
 
-    // Check PayPal order status
     const request = new paypal.orders.OrdersGetRequest(payment.paypalOrderId);
     const response = await paypalClient.execute(request);
     const isPaid = response.result.status === 'COMPLETED';
@@ -163,7 +135,7 @@ app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
 
     res.json({ isPaid });
   } catch (error) {
-    console.error('❌ QR payment status check error:', error);
+    console.error('QR payment status check error:', error);
     res.status(500).json({ 
       message: 'Failed to check payment status',
       error: process.env.NODE_ENV === 'development' ? error.message : {}
@@ -171,11 +143,10 @@ app.get('/api/payment/check-qr-status/:paymentId', async (req, res) => {
   }
 });
 
-// 🎵 PayPal webhook for payment confirmation
 app.post('/api/payment/confirm-qr/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
-    const payment = await Payment.findOne({ where: { paymentId } });
+    const payment = await db.Payment.findOne({ where: { id: paymentId } });
     if (!payment) {
       return res.status(404).json({ error: 'Payment not found' });
     }
@@ -183,7 +154,7 @@ app.post('/api/payment/confirm-qr/:paymentId', async (req, res) => {
     await payment.save();
     res.json({ success: true });
   } catch (error) {
-    console.error('❌ Payment confirmation error:', error);
+    console.error('Payment confirmation error:', error);
     res.status(500).json({ 
       message: 'Failed to confirm payment',
       error: process.env.NODE_ENV === 'development' ? error.message : {}
@@ -191,12 +162,12 @@ app.post('/api/payment/confirm-qr/:paymentId', async (req, res) => {
   }
 });
 
-// 🚫 404 handler
+// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// 🚨 Global error handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
@@ -205,21 +176,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 🚀 Start server
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
   try {
     await db.sequelize.authenticate();
     console.log('✅ Database connected successfully');
-    
-    // Sync database (use { force: true } only in development to reset tables)
-    await db.sequelize.sync({ alter: true });
-    console.log('✅ Database synced');
-    
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`🎵 Miku Miku Store Backend is ready!`);
   } catch (error) {
-    console.error('❌ Database connection error:', error);
+    console.error('Database connection error:', error);
     process.exit(1);
   }
 });

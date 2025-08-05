@@ -1,20 +1,22 @@
-// models/User.js
 const bcrypt = require('bcryptjs');
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
     },
     firstName: { type: DataTypes.STRING, allowNull: false, validate: { notEmpty: true, len: [2, 50] }},
     lastName: { type: DataTypes.STRING, allowNull: false, validate: { notEmpty: true, len: [2, 50] }},
     email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true }},
     password: { type: DataTypes.STRING, allowNull: false, validate: { len: [6, 255] }},
-    role: { type: DataTypes.ENUM('user', 'admin'), defaultValue: 'user' },
+    role: { type: DataTypes.STRING, allowNull: false },
     isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
-    lastLogin: DataTypes.DATE
+    lastLogin: DataTypes.DATE,
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+    updatedAt: { type: DataTypes.DATE, allowNull: false },
+    deletedAt: DataTypes.DATE
   }, {
     hooks: {
       beforeCreate: async user => {
