@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true
     },
     userId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER, // Matches Users.id (INTEGER)
       allowNull: false,
       unique: true,
       references: {
@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     productId: {
-      type: DataTypes.UUID,
+      type: DataTypes.UUID, // Changed to UUID to match Products.id
       allowNull: false,
       references: {
         model: 'Products',
